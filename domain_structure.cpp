@@ -277,6 +277,7 @@ void CDomain::ExtractCellGeomInformations()
 
 	/*--- Create Cell-Cell relaction ---*/
 		DMPlexCreateNeighborCSR(dmMesh, 0, &ncells, &offsets, &adjacency) ;/* Notes: The neighbor cell indexs are the local indexs. */
+	
 		#define print_neighborCSR false
 		#if ( print_neighborCSR == true )
 				for ( PetscInt i = cStart ; i < cEnd ; i++ ) {
@@ -454,7 +455,7 @@ void CDomain::ExtractFaceGeomInformations()
 			DMPlexGetConeOrientation( dmMesh, cc[0], &orientations );
 
 			for (PetscInt j=0 ; j < cell_nnghbrs_face ; j++ ) {
-				//cout<<"face : "<<i<<", cell_nghbr_face: "<<cell_nghbr_face[j]<<endl;
+
 				if( cell_nghbr_face[j] == i ) {
 
 					if ( orientations[j] >= 0.0 ) {
@@ -479,7 +480,7 @@ void CDomain::ExtractFaceGeomInformations()
 
 						//cout<<"Case A"<<endl;
 					} else {
-						cout<<"AAAAAA"<<endl;	
+
 						face_map_all[ i ]->c0 = cc[0] ;
 						face_map_all[ i ]->c1 = cc[1] ;	
 
@@ -510,9 +511,7 @@ void CDomain::ExtractFaceGeomInformations()
 			}
 		}
 	}//End face loop
-	//PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-	//VecRestoreArrayRead(FaceGeometryVec, &fgeom);
-//PetscEnd();
+
 	#define print_faceNormal  false
 	#if (print_faceNormal == true)
 		for ( PetscInt i =fStart ; i < fEnd ; i++ ) {

@@ -1,13 +1,21 @@
-#include "domain_structure.hpp"
+#include "geometry_structure.hpp"
 using namespace std ;
-CDomain::CDomain()
+CGeometry::CGeometry()
 {
 }
-void CDomain::ReadMeshFromFile( string filename )
+void CGeometry::Init( string filename )
+{
+	/* 1 */
+	ReadMeshFromFile( filename ) ;
+
+
+
+}
+void CGeometry::ReadMeshFromFile( string filename )
 {
 	PetscPrintf( PETSC_COMM_WORLD, "Read the mesh file, the file path: %s\n", filename.c_str() ) ;
 
-	/*--- Create DMPLEX for gmsh file ---*/
+	/*--- Read mesh file & Create PETSc DMPLEX object.  ---*/
 		DMPlexCreateFromFile( PETSC_COMM_WORLD, filename.c_str(), PETSC_TRUE, &dmMesh ) ;
 
 	/* Notes :
@@ -83,7 +91,7 @@ void CDomain::ReadMeshFromFile( string filename )
 		PetscViewerFileSetName( viewer, "Mesh.vtu");
 
 }
-void CDomain::ViewDMLabels()
+void CGeometry::ViewDMLabels()
 {
 	  DMLabel        label;
 	  const char    *labelName;
@@ -104,7 +112,7 @@ void CDomain::ViewDMLabels()
 	  }
 
 }
-void CDomain::ViewDMLabelsIndex()
+void CGeometry::ViewDMLabelsIndex()
 {
 	const PetscInt *ids, *ISid ;
 	PetscInt LabelSize ;
@@ -139,7 +147,7 @@ void CDomain::ViewDMLabelsIndex()
 	ISRestoreIndices( vtkIS, &ISid) ;
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 }
-void CDomain::CreateLocalToGlobalCellIdMapping()
+void CGeometry::CreateLocalToGlobalCellIdMapping()
 {
 		
 		/* Note: This gets a borrowed reference, so the user should not destroy this PetscSection. */
@@ -222,7 +230,7 @@ void CDomain::CreateLocalToGlobalCellIdMapping()
 	#endif
 	//PetscEnd();
 }
-void CDomain::CreateCellDM()
+void CGeometry::CreateCellDM()
 {
   PetscSF        sfPoint;
   PetscSection   coordSection;
@@ -272,7 +280,7 @@ void CDomain::CreateCellDM()
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
 }
-void CDomain::ExtractCellGeomInformations()
+void CGeometry::ExtractCellGeomInformations()
 {
 
 	/*--- Create Cell-Cell relaction ---*/
@@ -325,7 +333,7 @@ void CDomain::ExtractCellGeomInformations()
 	CreateCellNeighborVector();
 
 }
-void CDomain::CreateCellNeighborVector()
+void CGeometry::CreateCellNeighborVector()
 {
 	string Type="cell_face" ;
 	//string Type="cell_cell" ;
@@ -377,7 +385,7 @@ void CDomain::CreateCellNeighborVector()
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 	#endif 
 }
-void CDomain::ExtractFaceGeomInformations()
+void CGeometry::ExtractFaceGeomInformations()
 {
 	//face = new CFace[ fEnd-fStart ] ;
 	PetscInt check_face=0.0 ;
@@ -535,7 +543,7 @@ void CDomain::ExtractFaceGeomInformations()
 	ComputeFaceCellInformations();
 	//PetscEnd();
 }
-void CDomain::ComputeFaceCellInformations()
+void CGeometry::ComputeFaceCellInformations()
 {
 	for ( PetscInt i = fStart ; i < fEnd ; i++ ) {
 
@@ -599,7 +607,7 @@ void CDomain::ComputeFaceCellInformations()
 	PetscBarrier(NULL);
 }
 
-void CDomain::construct_cell_face()
+void CGeometry::construct_cell_face()
 {
 		/*--- extract cell & face properties (Label) form DMPLEX ---*/
 		DMGetLabel( dmMesh, "Cell Sets", &cell_label ) ;
@@ -622,7 +630,7 @@ void CDomain::construct_cell_face()
 			ISView( face_IS, PETSC_VIEWER_STDOUT_WORLD );
 		#endif
 }
-void CDomain::ReadBoundaryCellMarkersFromFile(string filename)
+void CGeometry::ReadBoundaryCellMarkersFromFile(string filename)
 {
 	/*--- extract cell & face properties (Label) form DMPLEX ---*/
 		DMGetLabel( dmMesh, "Cell Sets", &cell_label ) ;
@@ -717,7 +725,7 @@ $EndPhysicalNames
 	#endif
 
 }
- void CDomain::BulidFaceCellLoopMap()
+ void CGeometry::BulidFaceCellLoopMap()
 {
 	IS index_stratum_IS ;
 	const PetscInt *ids ;

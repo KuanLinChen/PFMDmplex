@@ -1,7 +1,8 @@
 //#include "common.hpp"
 #include "variable_structure.hpp"
-#include "domain_structure.hpp"
+#include "geometry_structure.hpp"
 #include "solver_poisson.hpp"
+#include "solver_sepcies.hpp"
 
 //#include "tool_function_petsc.hpp"
 
@@ -18,10 +19,12 @@ int main(int argc, char **argv)
 	MPI_Comm_size(PETSC_COMM_WORLD,&mpi_size);
 	MPI_Comm_rank(PETSC_COMM_WORLD,&mpi_rank);
 
-  CDomain *mesh ;
-  mesh = new CDomain ;
-  mesh->ReadMeshFromFile( "./mesh/2d_Structured.msh") ;
+  CGeometry *mesh ;
+  mesh = new CGeometry ;
+  //mesh->ReadMeshFromFile( "./mesh/2d_Structured.msh") ;
+  mesh->Init("./mesh/2d_Structured.msh") ;
 
+  
   CVariable *variable ;
   variable = new CVariable() ;
   variable->Init( mesh ) ;

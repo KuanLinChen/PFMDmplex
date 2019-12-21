@@ -2,7 +2,7 @@
 #include "common.hpp" 
 #include <petsc.h>
 #include "linear_solvers_structure.hpp"
-#include "domain_structure.hpp"
+#include "geometry_structure.hpp"
 #include "variable_structure.hpp"
 using namespace std;
 class CPoisson 
@@ -12,11 +12,12 @@ private:
   
 public:
   CPoisson();
-  CDomain *m ;
+  CGeometry *m ;
   CVariable *var ;
   CSysSolve *s ;
+  
   Vec Gradient[3];
-  void Init( CDomain *, CVariable * ) ;
+  void Init( CGeometry *, CVariable * ) ;
   void Solve();
   //void Solver(CVariable * var);
   void Bulid_A_B();

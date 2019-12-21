@@ -2,7 +2,7 @@
 #include "common.hpp" 
 #include <petsc.h>
 #include "linear_solvers_structure.hpp"
-#include "domain_structure.hpp"
+#include "geometry_structure.hpp"
 using namespace std;
 // class Scalar
 // {
@@ -20,8 +20,8 @@ private:
   
 public:
   CVariable();
-  CDomain *m ;
-  void Init( CDomain *m ) ;
+  CGeometry *m ;
+  void Init( CGeometry *m ) ;
   //Vec LSQ[3];
 
   void compute_LSQ_coefficient() ;

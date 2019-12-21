@@ -2,7 +2,7 @@
 CVariable::CVariable() 
 {
 }
-void CVariable::Init( CDomain *mm )
+void CVariable::Init( CGeometry *mm )
 {
 	m = mm ;
 }

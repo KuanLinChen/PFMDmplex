@@ -115,10 +115,12 @@ class CFace
 		}
 };
 
-class CDomain 
+class CGeometry 
 {
 	public:
-		CDomain();
+		CGeometry();
+
+		void Init(string);
 		DM dm, var_dm ;
 
 		void ReadMeshFromFile( string ) ;

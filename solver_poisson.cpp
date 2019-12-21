@@ -3,7 +3,7 @@ CPoisson::CPoisson()
 {
   
 }
-void CPoisson::Init( CDomain *mm, CVariable *vv )
+void CPoisson::Init( CGeometry *mm, CVariable *vv )
 {
   s = new CSysSolve() ;
 

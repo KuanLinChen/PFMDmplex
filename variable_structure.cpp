@@ -22,68 +22,68 @@ void CVariable::allocate_variable_vectors()
 }
 void CVariable::compute_LSQ_coefficient()
 {
-	double a11, a12, a21, a22, dx, dy, det, ia11, ia12, ia21, ia22 ;
-	int  ids ;
-	PetscScalar *val ;
-	VecZeroEntries( Debug ) ;
+	// double a11, a12, a21, a22, dx, dy, det, ia11, ia12, ia21, ia22 ;
+	// int  ids ;
+	// PetscScalar *val ;
+	// VecZeroEntries( Debug ) ;
 
-	VecGetArray( Debug, &val) ;
-	for ( int i = m->cStart ; i < m->cEnd ; i++ ) {
+	// VecGetArray( Debug, &val) ;
+	// for ( int i = m->cStart ; i < m->cEnd ; i++ ) {
 
-		/*--- Reset Matrix ---*/
-		a11 = 0.0 ; a12 = 0.0 ;
-		a21 = 0.0 ; a22 = 0.0 ;
+	// 	/*--- Reset Matrix ---*/
+	// 	a11 = 0.0 ; a12 = 0.0 ;
+	// 	a21 = 0.0 ; a22 = 0.0 ;
 
-		for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_cell.size() ; k++ ) {
-			ids = m->cell_map_all[i]->nghbr_cell[k] ;
-			dx = m->centroid[ids*3+0]  - m->centroid[i*3+0] ;
-			dy = m->centroid[ids*3+1]  - m->centroid[i*3+1] ;
+	// 	for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_cell.size() ; k++ ) {
+	// 		ids = m->cell_map_all[i]->nghbr_cell[k] ;
+	// 		dx = m->centroid[ids*3+0]  - m->centroid[i*3+0] ;
+	// 		dy = m->centroid[ids*3+1]  - m->centroid[i*3+1] ;
 
-			a11 = a11 + dx*dx ; 
-			a12 = a12 + dx*dy ;
-			a21 = a21 + dx*dy ; 
-			a22 = a22 + dy*dy ;
-		}
-		for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_face.size() ; k++ ) {
-			ids = m->cell_map_all[i]->nghbr_face[k] ;
-			dx =  m->face_map_all[ids]->centroid[0] - m->centroid[i*3+0] ;
-			dy =  m->face_map_all[ids]->centroid[1] - m->centroid[i*3+1] ;
+	// 		a11 = a11 + dx*dx ; 
+	// 		a12 = a12 + dx*dy ;
+	// 		a21 = a21 + dx*dy ; 
+	// 		a22 = a22 + dy*dy ;
+	// 	}
+	// 	for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_face.size() ; k++ ) {
+	// 		ids = m->cell_map_all[i]->nghbr_face[k] ;
+	// 		dx =  m->face_map_all[ids]->centroid[0] - m->centroid[i*3+0] ;
+	// 		dy =  m->face_map_all[ids]->centroid[1] - m->centroid[i*3+1] ;
 
-			a11 = a11 + dx*dx ; 
-			a12 = a12 + dx*dy ;
-			a21 = a21 + dx*dy ; 
-			a22 = a22 + dy*dy ;
-		}
-		/*--- Cal. LSQ det. ---*/
-		det = a11*a22 - a12*a21 ;
+	// 		a11 = a11 + dx*dx ; 
+	// 		a12 = a12 + dx*dy ;
+	// 		a21 = a21 + dx*dy ; 
+	// 		a22 = a22 + dy*dy ;
+	// 	}
+	// 	/*--- Cal. LSQ det. ---*/
+	// 	det = a11*a22 - a12*a21 ;
 
-		/*--- Cal. Inverse Matrix ---*/
-		ia11 =  a22/det ;
-		ia12 = -a21/det ;
-		ia21 = -a12/det ;
-		ia22 =  a11/det ;
+	// 	/*--- Cal. Inverse Matrix ---*/
+	// 	ia11 =  a22/det ;
+	// 	ia12 = -a21/det ;
+	// 	ia21 = -a12/det ;
+	// 	ia22 =  a11/det ;
 
-		/*--- Loop over neighbor "cells" ---*/
-		for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_cell.size() ; k++ ) {
+	// 	/*--- Loop over neighbor "cells" ---*/
+	// 	for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_cell.size() ; k++ ) {
 
-			ids = m->cell_map_all[i]->nghbr_cell[k] ;
-			dx = m->centroid[ids*3+0]  - m->centroid[i*3+0] ;
-			dy = m->centroid[ids*3+1]  - m->centroid[i*3+1] ;
+	// 		ids = m->cell_map_all[i]->nghbr_cell[k] ;
+	// 		dx = m->centroid[ids*3+0]  - m->centroid[i*3+0] ;
+	// 		dy = m->centroid[ids*3+1]  - m->centroid[i*3+1] ;
 
-			m->cell_map_all[i]->nghbr_cell_Cx.push_back(ia11*dx + ia12*dy) ;
-			m->cell_map_all[i]->nghbr_cell_Cy.push_back(ia21*dx + ia22*dy) ;
-			//cout<<m->cell_map_all[i]->nghbr_cell_Cx[k]<<endl;
-			val[i] += 	m->cell_map_all[i]->nghbr_cell_Cx[k] ;
-		}
-		for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_face.size() ; k++ ) {
-			ids = m->cell_map_all[i]->nghbr_face[k] ;
-			dx =  m->face_map_all[ids]->centroid[0] - m->centroid[i*3+0] ;
-			dy =  m->face_map_all[ids]->centroid[1] - m->centroid[i*3+1] ;
+	// 		m->cell_map_all[i]->nghbr_cell_Cx.push_back(ia11*dx + ia12*dy) ;
+	// 		m->cell_map_all[i]->nghbr_cell_Cy.push_back(ia21*dx + ia22*dy) ;
+	// 		//cout<<m->cell_map_all[i]->nghbr_cell_Cx[k]<<endl;
+	// 		val[i] += 	m->cell_map_all[i]->nghbr_cell_Cx[k] ;
+	// 	}
+	// 	for ( unsigned int k = 0 ; k < m->cell_map_all[i]->nghbr_face.size() ; k++ ) {
+	// 		ids = m->cell_map_all[i]->nghbr_face[k] ;
+	// 		dx =  m->face_map_all[ids]->centroid[0] - m->centroid[i*3+0] ;
+	// 		dy =  m->face_map_all[ids]->centroid[1] - m->centroid[i*3+1] ;
 
-			m->cell_map_all[i]->nghbr_face_Cx.push_back(ia11*dx + ia12*dy) ;
-			m->cell_map_all[i]->nghbr_face_Cy.push_back(ia21*dx + ia22*dy) ;
-			val[i] += 	m->cell_map_all[i]->nghbr_face_Cx[k] ;
-		}		
-	}//end cell loop.
-	VecRestoreArray( Debug, &val) ;
+	// 		m->cell_map_all[i]->nghbr_face_Cx.push_back(ia11*dx + ia12*dy) ;
+	// 		m->cell_map_all[i]->nghbr_face_Cy.push_back(ia21*dx + ia22*dy) ;
+	// 		val[i] += 	m->cell_map_all[i]->nghbr_face_Cx[k] ;
+	// 	}		
+	// }//end cell loop.
+	// VecRestoreArray( Debug, &val) ;
 }

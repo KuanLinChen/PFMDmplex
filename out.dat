@@ -1,0 +1,23 @@
+Read the mesh file, the file path: ./mesh/2d_Structured.msh
+Mesh dimension: 2
+rank: 0, cStart: 0, cEnd: 36
+rank: 0, vStart: 36, vEnd: 85
+rank: 0, fStart: 85, fEnd: 169
+rank: 0, eStart: 85, eEnd: 169
+
+------------------------ Mesh boundary & cell markers ----------------------
+PhysNames
+mpi_rank: 0, name: GROUND, ids: 2
+mpi_rank: 0, name: NEUMANN, ids: 3
+mpi_rank: 0, name: POWER, ids: 4
+mpi_rank: 0, name: Plasma, ids: 1
+
+PhysNamesCPU
+mpi_rank: 0, name: GROUND, ids: 2
+mpi_rank: 0, name: NEUMANN, ids: 3
+mpi_rank: 0, name: POWER, ids: 4
+
+create cell dm ... done
+rank[0]-> gVec size->36, lVec size->36
+rank[0]-> number of ghost cell 0
+rank: 0, cStart: 0, cEnd: 36, cEndInterior: 36

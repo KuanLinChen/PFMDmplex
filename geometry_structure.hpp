@@ -29,6 +29,9 @@ class CCell
 	vector<double> nghbr_face_Cx;
 	vector<double> nghbr_face_Cy;
 	vector<double> nghbr_face_Cz;
+
+	PetscFVCellGeom *cgeom ;
+
 	int nnghbrs_cell()
 	{
 		return nghbr_cell.size();
@@ -57,13 +60,20 @@ class CFace
 		{
 			c0 = -9999 ;
 			c1 = -9999 ;
-			for (int i = 0 ; i < 3 ; i++ )      centroid[i] = 0.0 ;
-			for (int i = 0 ; i < 3 ; i++ )     face_nrml[i] = 0.0 ;
 			face_nrml_mag = 0.0 ;
 		};
 		int offsets ;
-		//PetscInt face_type ; //1: Interior face, 2: boundary face, 3: processors boundary face.
-		int nnghbrs ; 		/*!< \brief number of neighbors */ 
+		PetscFVFaceGeom *fgeom ;
+		PetscFVCellGeom *cgeom[2] ;
+		/*!< \brief
+			typedef struct {
+  			PetscReal   normal[3];   // Area-scaled normals 
+  			PetscReal   centroid[3]; // Location of centroid (quadrature point) 
+  			PetscScalar grad[2][3];  // Face contribution to gradient in left and right cell 
+			} PetscFVFaceGeom;
+		*/
+
+		int nnghbrs_cell ; 		/*!< \brief number of neighbors */ 
 
 		int  c0,  c1 ;		/*!< \brief left and right cell index. (local ) */
 		int gc0, gc1 ;		/*!< \brief left and right cell index. (global) */
@@ -86,33 +96,57 @@ class CFace
 		   	 		 dNPf; /*!< \brief Distance between N' and f. */
 
 		//face_nrml_mag(nfaces) = sqrt( ( x1-x2 )**2 + ( -(y1-y2) )**2 )
-		double face_nrml[3], face_nrml_mag, dA, centroid[3], nA[3] ;
-		void calculate_normal_mag( PetscInt iface )
-		{
-			Vec            coordinates;
-			PetscScalar   *coords = NULL;
-			PetscInt       coordSize ;
-			PetscSection   coordSection;
+		double face_nrml_mag ; //, dA, nA[3] ;
+		double face_nrml[3] ;
+		// void calculate_normal_mag( PetscInt iface )
+		// {
+		// 	Vec            coordinates;
+		// 	PetscScalar   *coords = NULL;
+		// 	PetscInt       coordSize ;
+		// 	PetscSection   coordSection;
 
-			DMGetCoordinatesLocal ( dmMesh, &coordinates  ) ;
-			DMGetCoordinateSection( dmMesh, &coordSection ) ;
+		// 	DMGetCoordinatesLocal ( dmMesh, &coordinates  ) ;
+		// 	DMGetCoordinateSection( dmMesh, &coordSection ) ;
 
-			DMPlexVecGetClosure( dmMesh, coordSection, coordinates, iface, &coordSize, &coords);
-			PetscScalar x1 = coords[0] ;
-			PetscScalar y1 = coords[1] ;
-			PetscScalar x2 = coords[2] ;
-			PetscScalar y2 = coords[3] ;
-			face_nrml_mag = sqrt( pow( x1-x2, 2.0 ) + pow( -(y1-y2), 2.0 ) );
-			DMPlexVecRestoreClosure( dmMesh, coordSection, coordinates, iface, &coordSize, &coords);
-		}
-		void calculate_normal_mag2()
+		// 	DMPlexVecGetClosure( dmMesh, coordSection, coordinates, iface, &coordSize, &coords);
+		// 	PetscScalar x1 = coords[0] ;
+		// 	PetscScalar y1 = coords[1] ;
+		// 	PetscScalar x2 = coords[2] ;
+		// 	PetscScalar y2 = coords[3] ;
+		// 	face_nrml_mag = sqrt( pow( x1-x2, 2.0 ) + pow( -(y1-y2), 2.0 ) );
+		// 	DMPlexVecRestoreClosure( dmMesh, coordSection, coordinates, iface, &coordSize, &coords);
+		// }
+		void calculate_normal_mag()
 		{
-			face_nrml_mag = sqrt( pow( face_nrml[0], 2.0 ) + pow( face_nrml[1], 2.0 )+ pow( face_nrml[2], 2.0 ) );
+			face_nrml_mag = sqrt( pow( fgeom->normal[0], 2.0 ) + pow( fgeom->normal[1], 2.0 )+ pow( fgeom->normal[2], 2.0 ) );
+			face_nrml[0] = fgeom->normal[0]/face_nrml_mag ;
+			face_nrml[1] = fgeom->normal[1]/face_nrml_mag ;
+			face_nrml[2] = fgeom->normal[2]/face_nrml_mag ;
 		}
-		void calculate_face_area()
-		{
-			dA = sqrt( pow( face_nrml[0], 2.0 ) + pow( face_nrml[1], 2.0 )+ pow( face_nrml[2], 2.0 ) );
+		void exchange()
+		{	
+			PetscFVCellGeom *tmp0, *tmp1 ;
+			int C0, C1, GC0, GC1 ;
+			//copy
+			C0  = c0 ;
+			C1  = c1 ;
+			GC0 = gc0 ;
+			GC1 = gc1 ;
+			tmp0 = cgeom[0] ;
+			tmp1 = cgeom[1] ;
+
+			//exchange
+			c0 = C1 ;
+			c1 = C0 ;
+			gc0 = GC1;
+			gc1 = GC0 ;
+			cgeom[0] = tmp1 ;
+			cgeom[1] = tmp0 ;
 		}
+		// void calculate_face_area()
+		// {
+		// 	dA = sqrt( pow( face_nrml[0], 2.0 ) + pow( face_nrml[1], 2.0 )+ pow( face_nrml[2], 2.0 ) );
+		// }
 };
 
 class CGeometry 
@@ -127,17 +161,22 @@ class CGeometry
 		void ViewDMLabelsIndex();
 		//CCell_Face *cell_face ;
 
+		CCell *cell_all ;
+		CFace *face_all ;
 
-		Vec CellGeometryVec, FaceGeometryVec ;
+		Vec CellGeometryVec, FaceGeometryVec ;/*!< \brief Petsc vector for store the cell and face geometry. (like cell center, face normal...)*/
+		
+
+
 		Vec gVec, lVec ;
 		PetscInt global_vector_size, local_vector_size ;
 		/* coordinate informations */
-			int fStart, fEnd ;
-			int eStart, eEnd ;
-			int vStart, vEnd ;
-			int cStart, //start cell index on each processor, usually is zero 
-					cEnd, 	//end cell indel on each processor including the processor boundary ghost cells.
-					cEndInterior ;//end cell indel on each processor excluding the processor boundary ghost cells.
+			int fStart, fEnd ; /*!< \brief 'face' start & end index on each processor. */ 
+			int eStart, eEnd ; /*!< \brief 'element' start & end index on each processor. (For 3D only.)*/ 
+			int vStart, vEnd ; /*!< \brief 'vertices' start & end index on each processor. */ 
+			int cStart,        /*!< \brief 'cell' start index on each processor, usually is zero . */
+					cEnd,          /*!< \brief 'cell'   end index on each processor including the processor boundary ghost cells. */
+					cEndInterior ; /*!< \brief 'cell'   end index on each processor excluding the processor boundary ghost cells. */
 
 		/* Face data */
 			map<int,CFace*> face_map_all ;

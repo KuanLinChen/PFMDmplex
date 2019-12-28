@@ -50,6 +50,7 @@ void CVariable::compute_LSQ_coefficient()
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_face.size() ; k++ ) {
 
 			ids = m->cell_all[i].nghbr_face[k] - m->fStart ;
+
 			dx =  m->face_all[ids].centroid[0] - m->cell_all[i].centroid[0] ;
 			dy =  m->face_all[ids].centroid[1] - m->cell_all[i].centroid[1] ;
 
@@ -71,20 +72,25 @@ void CVariable::compute_LSQ_coefficient()
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
 
 			ids = m->cell_all[i].nghbr_cell[k] ;
+
 			dx = m->cell_all[ids].centroid[0]  - m->cell_all[i].centroid[0] ;
 			dy = m->cell_all[ids].centroid[1]  - m->cell_all[i].centroid[1] ;
 
 			m->cell_all[i].nghbr_cell_Cx.push_back(ia11*dx + ia12*dy) ;
 			m->cell_all[i].nghbr_cell_Cy.push_back(ia21*dx + ia22*dy) ;
+
 			val[i] += 	m->cell_all[i].nghbr_cell_Cx[k] ;
 		}
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_face.size() ; k++ ) {
+
 			ids = m->cell_all[i].nghbr_face[k] - m->fStart ;
+
 			dx =  m->face_all[ids].centroid[0] - m->cell_all[i].centroid[0] ;
 			dy =  m->face_all[ids].centroid[1] - m->cell_all[i].centroid[1] ;
 
 			m->cell_all[i].nghbr_face_Cx.push_back(ia11*dx + ia12*dy) ;
 			m->cell_all[i].nghbr_face_Cy.push_back(ia21*dx + ia22*dy) ;
+			
 			val[i] += 	m->cell_all[i].nghbr_face_Cx[k] ;
 		}		
 	}//end cell loop.

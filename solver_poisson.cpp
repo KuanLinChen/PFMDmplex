@@ -120,7 +120,7 @@ void CPoisson::CalculateGraditntLSQ()
 
 	for ( unsigned int i = 0 ; i < m->neumann_face_loop.size() ; i++ ) {
 		ids = m->neumann_face_loop[i]->offsets - m->fStart ;
-  	var->FaceField[ ids ] = value[ m->neumann_face_loop[i]->cgeom[0]->gindex ];
+  	var->FaceField[ ids ] = value[ m->neumann_face_loop[i]->cgeom[0]->index ];
 	}
 
 	for ( int i = m->cStart ; i < m->cEndInterior ; i++ ) {

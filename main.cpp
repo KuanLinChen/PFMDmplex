@@ -29,12 +29,15 @@ int main(int argc, char **argv)
   variable = new CVariable() ;
   variable->Init( mesh ) ;
   variable->allocate_variable_vectors();
-
+  //cout<<"AAA2"<<endl;
+  
 	CPoisson *poisson ;
 	poisson = new CPoisson();
 	poisson->Init( mesh, variable ) ;
 	//cout<<"A"<<endl;
 	poisson->Solve() ;
+	
+  PetscEnd();
 
 
 

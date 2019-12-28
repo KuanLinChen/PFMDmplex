@@ -101,6 +101,7 @@ int CSysSolve::MatAZeroEntries()
 int CSysSolve::VecBZeroEntries()
 {
 	VecZeroEntries( B ) ;
+	return 0 ;
 }
 void CSysSolve::ViewMatrix()
 {

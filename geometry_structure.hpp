@@ -19,7 +19,12 @@ using namespace std;
 class CCell
 {
 	public: 
-	CCell(){};
+	CCell()
+	{
+		index = gindex = -999 ;
+		centroid[0] = centroid[1] = centroid[3] =  0.0 ;
+		volume = 0.0 ;
+	};
 	vector<int> nghbr_cell ;
 	vector<int> nghbr_face ;
 	vector<double> nghbr_cell_Cx;
@@ -30,15 +35,18 @@ class CCell
 	vector<double> nghbr_face_Cy;
 	vector<double> nghbr_face_Cz;
 
-	PetscFVCellGeom *cgeom ;
+	int  index,  /*!< \brief  local cell index. */
+	    gindex ; /*!< \brief global cell index. */
 
+	double centroid[3], auxiliary[3] ;
+	double volume ;
 	int nnghbrs_cell()
 	{
 		return nghbr_cell.size();
 	}
 	int nnghbrs_face()
 	{
-		return nghbr_cell.size();
+		return nghbr_face.size();
 	}
 };
 /*
@@ -58,46 +66,39 @@ class CFace
 	public:
 		CFace()
 		{
-			c0 = -9999 ;
-			c1 = -9999 ;
 			face_nrml_mag = 0.0 ;
-		};
+			face_nrml[0]=0.0;
+			face_nrml[1]=0.0;
+			face_nrml[2]=0.0;
+			 centroid[0]=0.0;
+			 centroid[1]=0.0;
+			 centroid[2]=0.0;
+		} ;
+
 		int offsets ;
-		PetscFVFaceGeom *fgeom ;
-		PetscFVCellGeom *cgeom[2] ;
-		/*!< \brief
-			typedef struct {
-  			PetscReal   normal[3];   // Area-scaled normals 
-  			PetscReal   centroid[3]; // Location of centroid (quadrature point) 
-  			PetscScalar grad[2][3];  // Face contribution to gradient in left and right cell 
-			} PetscFVFaceGeom;
-		*/
+
+		CCell *cgeom[2] ;
 
 		int nnghbrs_cell ; 		/*!< \brief number of neighbors */ 
 
-		int  c0,  c1 ;		/*!< \brief left and right cell index. (local ) */
-		int gc0, gc1 ;		/*!< \brief left and right cell index. (global) */
 
-		double c0_centroid[3], c1_centroid[3] ; //cell centroid point.
-		double   c0_volume, c1_volume   ;
 		double dL, dR ;/*!< \brief left and right cell centroid to face centroid index. */
-
-		double c0_auxiliary[3], c1_auxiliary[3] ; 
 		//Vector 
 		double  PN[3], /*!< \brief Vector of PN. */
-		    		Pf[3], /*!< \brief Vector of Pf. */
-		    		Nf[3], /*!< \brief Vector of Nf. */
-				   PPP[3], /*!< \brief Vector of PP'. */
-				   NNP[3], /*!< \brief Vector of NN'. */
-				   PPf[3], /*!< \brief Vector of PP'. */
-				   NPf[3], /*!< \brief Vector of NN'. */
-		    		 dPN, /*!< \brief Distance between P' and f. */
-		    		 dPPf, /*!< \brief Distance between P' and f. */
-		   	 		 dNPf; /*!< \brief Distance between N' and f. */
+						Pf[3], /*!< \brief Vector of Pf. */
+						Nf[3], /*!< \brief Vector of Nf. */
+					 PPP[3], /*!< \brief Vector of PP'. */
+					 NNP[3], /*!< \brief Vector of NN'. */
+					 PPf[3], /*!< \brief Vector of PP'. */
+					 NPf[3], /*!< \brief Vector of NN'. */
+						  dPN, /*!< \brief Distance between P' and f. */
+						 dPPf, /*!< \brief Distance between P' and f. */
+				 		 dNPf; /*!< \brief Distance between N' and f. */
 
 		//face_nrml_mag(nfaces) = sqrt( ( x1-x2 )**2 + ( -(y1-y2) )**2 )
 		double face_nrml_mag ; //, dA, nA[3] ;
 		double face_nrml[3] ;
+		double  centroid[3] ;
 		// void calculate_normal_mag( PetscInt iface )
 		// {
 		// 	Vec            coordinates;
@@ -118,35 +119,19 @@ class CFace
 		// }
 		void calculate_normal_mag()
 		{
-			face_nrml_mag = sqrt( pow( fgeom->normal[0], 2.0 ) + pow( fgeom->normal[1], 2.0 )+ pow( fgeom->normal[2], 2.0 ) );
-			face_nrml[0] = fgeom->normal[0]/face_nrml_mag ;
-			face_nrml[1] = fgeom->normal[1]/face_nrml_mag ;
-			face_nrml[2] = fgeom->normal[2]/face_nrml_mag ;
+			face_nrml_mag = sqrt( pow( face_nrml[0], 2.0 ) + pow( face_nrml[1], 2.0 )+ pow( face_nrml[2], 2.0 ) );
+			face_nrml[0] = face_nrml[0]/face_nrml_mag ;
+			face_nrml[1] = face_nrml[1]/face_nrml_mag ;
+			face_nrml[2] = face_nrml[2]/face_nrml_mag ;
 		}
 		void exchange()
 		{	
-			PetscFVCellGeom *tmp0, *tmp1 ;
-			int C0, C1, GC0, GC1 ;
-			//copy
-			C0  = c0 ;
-			C1  = c1 ;
-			GC0 = gc0 ;
-			GC1 = gc1 ;
+			CCell *tmp0, *tmp1 ;
 			tmp0 = cgeom[0] ;
 			tmp1 = cgeom[1] ;
-
-			//exchange
-			c0 = C1 ;
-			c1 = C0 ;
-			gc0 = GC1;
-			gc1 = GC0 ;
 			cgeom[0] = tmp1 ;
 			cgeom[1] = tmp0 ;
 		}
-		// void calculate_face_area()
-		// {
-		// 	dA = sqrt( pow( face_nrml[0], 2.0 ) + pow( face_nrml[1], 2.0 )+ pow( face_nrml[2], 2.0 ) );
-		// }
 };
 
 class CGeometry 
@@ -161,8 +146,6 @@ class CGeometry
 		void ViewDMLabelsIndex();
 		//CCell_Face *cell_face ;
 
-		CCell *cell_all ;
-		CFace *face_all ;
 
 		Vec CellGeometryVec, FaceGeometryVec ;/*!< \brief Petsc vector for store the cell and face geometry. (like cell center, face normal...)*/
 		
@@ -178,27 +161,18 @@ class CGeometry
 					cEnd,          /*!< \brief 'cell'   end index on each processor including the processor boundary ghost cells. */
 					cEndInterior ; /*!< \brief 'cell'   end index on each processor excluding the processor boundary ghost cells. */
 
-		/* Face data */
-			map<int,CFace*> face_map_all ;
-			map<int,CCell*> cell_map_all ;
+		/* Cell & Face data */
+			CCell *cell_all ;
+			CFace *face_all ;
 
-			//map<int,CFace*> power_face_loop, ground_face_loop, neumann_face_loop, 
-			//interior_face_loop ;//The face data contain only the interior faces, which are shared by two cells.
 			vector<CFace*> power_face_loop, ground_face_loop, neumann_face_loop, processors_face_loop, 
 			interior_face_loop ;//The face data contain only the interior faces, which are shared by two cells.
 
 
-			//double *gid ;
-			//vector<CFace*> power_face_loop2 ;
 
 			void BulidFaceCellLoopMap() ;
-
 			void ExtractCellGeomInformations() ;
-			double *volume, *centroid ;
 			void CreateCellNeighborVector();
-
-
-
 			void ExtractFaceGeomInformations() ;
 
 			vector<int> interior_face_ids, interior_bface_ids ;

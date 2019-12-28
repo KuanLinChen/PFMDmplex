@@ -241,8 +241,6 @@ void CGeometry::ExtractCellGeomInformations()
 
 	/*--- Extract the cell volume and centroid ---*/
 		const PetscScalar *cgeom ;
-		//typedef struct { PetscReal centroid[3]; PetscReal volume; } PetscFVCellGeom;
-
 		DM dmCell ;
 		VecGetDM( CellGeometryVec, &dmCell);
 		VecGetArrayRead(CellGeometryVec, &cgeom);
@@ -250,16 +248,23 @@ void CGeometry::ExtractCellGeomInformations()
 		cell_all = new CCell [ cEnd-cStart ] ; 
 
 		for( PetscInt i=cStart ; i <cEnd ; i++ ) {
-			DMPlexPointLocalRead(dmCell, i, cgeom, &cell_all[i].cgeom );
-		}
-		//VecRestoreArrayRead(CellGeometryVec, &cgeom);
-		//Note: do not restore the array here.
+			PetscFVCellGeom *cg ;
+			//typedef struct { PetscReal centroid[3]; PetscReal volume; } PetscFVCellGeom;
+			DMPlexPointLocalRead(dmCell, i, cgeom, &cg ) ;
 
-	#define print_volume_centroid true
+			cell_all[ i ].index 			= i ;
+			cell_all[ i ].centroid[0] = cg->centroid[0] ;
+			cell_all[ i ].centroid[1] = cg->centroid[1] ;
+			cell_all[ i ].centroid[2] = cg->centroid[2] ;
+			cell_all[ i ].volume      = cg->volume ;
+		}
+		VecRestoreArrayRead(CellGeometryVec, &cgeom);
+
+	#define print_volume_centroid false
 	#if ( print_volume_centroid == true )
 		for ( PetscInt i = cStart ; i < cEnd ; i++ ) {
-			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, volume[%d]-> %e\n", mpi_rank, i, cell_all[i].cgeom->volume ) ;
-			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"cx[%d]->%e, cy[%d]->%e, cz[%d]->%e \n", i, cell_all[i].cgeom->centroid[0], i, cell_all[i].cgeom->centroid[1], i, cell_all[i].cgeom->centroid[2] ) ;
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, volume[%d]-> %e\n", mpi_rank, i, cell_all[i].volume ) ;
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"cx[%d]->%e, cy[%d]->%e, cz[%d]->%e \n", i, cell_all[i].centroid[0], i, cell_all[i].centroid[1], i, cell_all[i].centroid[2] ) ;
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"\n") ;
 		}
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
@@ -268,44 +273,43 @@ void CGeometry::ExtractCellGeomInformations()
 }
 void CGeometry::CreateCellNeighborVector()
 {
-	//string Type="cell_face" ;
-	string Type="cell_cell" ;
+	string Type="cell_face" ;
+	//string Type="cell_cell" ;
 	int cell_nnghbrs_cell, face_nnghbrs_cell ;
 
 	int             cell_nghbr_cell_index ;
 	const PetscInt *cell_nghbr_face_index ;
-	PetscInt cell_nnghbrs_face, face_nnghbrs_node ;
-		const PetscInt *cell_nghbr_node_list ;
+	PetscInt cell_nnghbrs_face ;//, face_nnghbrs_node ;
+	//const PetscInt *cell_nghbr_node_list ;
 
 	if ( Type == "cell_face" ) {
 
-
 		for( PetscInt i=cStart ; i <cEnd ; i++ ) {
 
-			cell_map_all.insert( make_pair( i, new CCell() ) ); 
-
+			/* cell-cell */
 			cell_nnghbrs_cell  = cell_cell_nnghbrs(i) ;
 
-			DMPlexGetConeSize( dmMesh, i, &cell_nnghbrs_face) ;
-
-			DMPlexGetCone    ( dmMesh, i, &cell_nghbr_face_index ) ;
-
-			/* cell-cell */
 			for ( int k = 0 ; k < cell_nnghbrs_cell ; k++ ) {
+
 				cell_nghbr_cell_index = cell_nghbr(i,k);
-				cell_map_all[ i ]->nghbr_cell.push_back(cell_nghbr_cell_index) ;
+				cell_all[ i ].nghbr_cell.push_back(cell_nghbr_cell_index) ;
+
 			}
 
 			/* cell-face */
+			DMPlexGetConeSize( dmMesh, i, &cell_nnghbrs_face) ;
+			DMPlexGetCone    ( dmMesh, i, &cell_nghbr_face_index ) ;
+
 			for ( int k = 0 ; k < cell_nnghbrs_face ; k++ ) {
+
 				DMPlexGetSupportSize( dmMesh, cell_nghbr_face_index[k], &face_nnghbrs_cell) ;
-				//cout<<face_nnghbrs_cell<<endl;
-				if ( face_nnghbrs_cell == 1 ) {
-					cell_map_all[i]->nghbr_face.push_back(cell_nghbr_face_index[k]) ;
+
+				if ( face_nnghbrs_cell == 1 )  {
+					cell_all[ i ].nghbr_face.push_back(cell_nghbr_face_index[k]) ;
 				}
+
 			}
 		}//end cell loop
-		//cout<<"A"<<endl;PetscEnd();
 
 	} else if ( Type == "cell_cell" ) {
 
@@ -352,29 +356,24 @@ void CGeometry::CreateCellNeighborVector()
 	#define print_cell_information false
 	#if ( print_cell_information == true )
 		for ( PetscInt i = cStart ; i < cEnd ; i++ ) {
-			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, nnghbrs cell: %d, nnghbrs face: %d\n", mpi_rank, cell_map_all[i]->nnghbrs_cell(), cell_map_all[i]->nnghbrs_face()) ;
-			//PetscSynchronizedPrintf( PETSC_COMM_WORLD,"centroid[0]->%e, centroid[1]->%e, centroid[2]->%e \n",centroid[i*3+0],centroid[i*3+1],centroid[i*3+2]  ) ;
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, nnghbrs cell: %d, nnghbrs face: %d\n", mpi_rank, cell_all[i].nnghbrs_cell(), cell_all[i].nnghbrs_face()) ;
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"\n") ;
 		}
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+		//PetscEnd();
 	#endif 
-	//PetscEnd();
 }
 void CGeometry::ExtractFaceGeomInformations()
 {
 
 	face_all = new CFace[ fEnd-fStart ] ;
 
-	const PetscInt       *cc ;
+	const PetscInt    *adjacent_cell ;
 	const PetscScalar *fgeom ;
 
 	DM dmFace ;
 	VecGetDM( FaceGeometryVec, &dmFace);
 	VecGetArrayRead(FaceGeometryVec, &fgeom);
-	PetscInt cell_nnghbrs_face ;
-
-	const PetscInt *cell_nghbr_face, *orientations ;
-
 
 	for ( PetscInt i = fStart ; i < fEnd ; i++ ) {
 
@@ -382,44 +381,50 @@ void CGeometry::ExtractFaceGeomInformations()
 		/* Number of adjacent cells at the face. */
 		face_all[i-fStart].nnghbrs_cell = face_nnghbrs_cell(i) ;
 
-		DMPlexGetSupport( dmMesh, i, &cc) ;
+		DMPlexGetSupport( dmMesh, i, &adjacent_cell) ;
 
-		DMPlexPointLocalRead(dmFace, i, fgeom, &face_all[i-fStart].fgeom );
+		PetscFVFaceGeom *fg ;
+		DMPlexPointLocalRead(dmFace, i, fgeom, &fg ) ;
+
+		face_all[i-fStart].face_nrml[0] = fg->  normal[0] ;
+		face_all[i-fStart].face_nrml[1] = fg->  normal[1] ;
+		face_all[i-fStart].face_nrml[2] = fg->  normal[2] ;
+
+		face_all[i-fStart]. centroid[0] = fg->centroid[0] ;
+		face_all[i-fStart]. centroid[1] = fg->centroid[1] ;
+		face_all[i-fStart]. centroid[2] = fg->centroid[2] ;
 
 		face_all[i-fStart].calculate_normal_mag();
 
+
 		if ( face_all[i-fStart].nnghbrs_cell == 1 ) {//means that the face is boundary face or processor boundary face.
 
-			face_all[i-fStart].c0 = cc[0] ;
-			face_all[i-fStart].c1 = cc[0] ;
-			face_all[i-fStart].cgeom[0] = cell_all[face_all[i-fStart].c0].cgeom ;
-			face_all[i-fStart].cgeom[1] = cell_all[face_all[i-fStart].c0].cgeom ;
+			face_all[i-fStart].cgeom[0] = &cell_all[ adjacent_cell[0] ] ;
+			face_all[i-fStart].cgeom[1] = &cell_all[ adjacent_cell[0] ] ;
 
-			face_all[i-fStart].gc0 = Local2GlobalIds( face_all[i-fStart].c0 )  ;
-			face_all[i-fStart].gc1 = Local2GlobalIds( face_all[i-fStart].c1 )  ;
+			face_all[i-fStart].cgeom[0]->gindex = Local2GlobalIds(  adjacent_cell[0] )  ;
+			face_all[i-fStart].cgeom[0]->gindex = Local2GlobalIds(  adjacent_cell[0] )  ;
 
 		} else {
 
-			face_all[i-fStart].c0 = cc[0] ;
-			face_all[i-fStart].c1 = cc[1] ;	
 
-			face_all[i-fStart].cgeom[0] = cell_all[face_all[i-fStart].c0].cgeom ;
-			face_all[i-fStart].cgeom[1] = cell_all[face_all[i-fStart].c1].cgeom ;
+			face_all[i-fStart].cgeom[0] = &cell_all[ adjacent_cell[0] ] ;
+			face_all[i-fStart].cgeom[1] = &cell_all[ adjacent_cell[1] ] ;
 
-			face_all[i-fStart].gc0 = Local2GlobalIds( face_all[i-fStart].c0 )  ;
-			face_all[i-fStart].gc1 = Local2GlobalIds( face_all[i-fStart].c1 )  ;
+			face_all[i-fStart].cgeom[0]->gindex = Local2GlobalIds(  adjacent_cell[0] )  ;
+			face_all[i-fStart].cgeom[1]->gindex = Local2GlobalIds(  adjacent_cell[1] )  ;
 
 		}
 	}//End face loop
 
-	#define print_faceNormal  true
+	#define print_faceNormal  false
 	#if (print_faceNormal == true)
 		for ( PetscInt i =fStart ; i < fEnd ; i++ ) {
 
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, face[%d]-> nnghbrs: %d\n", mpi_rank, i, face_all[i-fStart].nnghbrs_cell ) ;
 
-			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"nghbr[0]-> %d \n", face_all[i-fStart].c0 ) ;
-			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"nghbr[1]-> %d \n", face_all[i-fStart].c1 ) ;
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"nghbr[0]-> %d \n", face_all[i-fStart].cgeom[0]->index ) ;
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"nghbr[1]-> %d \n", face_all[i-fStart].cgeom[1]->index ) ;
 
 			for (PetscInt d = 0 ; d < GetDimension() ; d++ )
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"face_nrml[%d]-> %e \n",d, face_all[i-fStart].face_nrml[d] ) ;
@@ -431,17 +436,14 @@ void CGeometry::ExtractFaceGeomInformations()
 	#endif
 
 	ComputeFaceCellInformations();
-	PetscEnd();
 }
 void CGeometry::ComputeFaceCellInformations()
 {
-	//int C0, C1 ;
+	// //int C0, C1 ;
 
-	for ( PetscInt i = fStart ; i < fEnd ; i++ ) {
+	 for ( PetscInt i = fStart ; i < fEnd ; i++ ) {
 
-		const PetscInt *orientations;
-
-		if( face_all[i-fStart].nnghbrs_cell == 2 ) {
+	 	if( face_all[i-fStart].nnghbrs_cell == 2 ) {
 
 			for ( int k = 0 ; k < 3 ; k++ ) {
 				face_all[i-fStart].PN[ k ] = face_all[ i-fStart ].cgeom[1]->centroid[k] - face_all[i-fStart].cgeom[0]->centroid[k] ;
@@ -449,9 +451,9 @@ void CGeometry::ComputeFaceCellInformations()
 
 			if ( DotProduct( face_all[i-fStart].PN, face_all[i-fStart].face_nrml ) < 0.0 )
 			{
-					cout<<"change"<<endl;
-					face_all[i-fStart].exchange() ;
-					exit(1) ;
+				PetscPrintf( PETSC_COMM_SELF, "flip face\n" ) ;
+				face_all[i-fStart].exchange() ;
+				PetscEnd() ;
 			}
 
 			for ( int k = 0 ; k < 3 ; k++ ) {
@@ -460,10 +462,10 @@ void CGeometry::ComputeFaceCellInformations()
 				face_all[i-fStart].PN[ k ] = face_all[i-fStart].cgeom[1]->centroid[k] - face_all[i-fStart].cgeom[0]->centroid[k] ;
 
 				/*--- Pf Vector ---*/
-				face_all[i-fStart].Pf[ k ] = face_all[i-fStart].fgeom   ->centroid[k] - face_all[i-fStart].cgeom[0]->centroid[k] ;
+				face_all[i-fStart].Pf[ k ] = face_all[i-fStart].centroid[k] - face_all[i-fStart].cgeom[0]->centroid[k] ;
 
 				/*--- Nf Vector ---*/
-				face_all[i-fStart].Pf[ k ] = face_all[i-fStart].fgeom   ->centroid[k] - face_all[i-fStart].cgeom[1]->centroid[k] ;
+				face_all[i-fStart].Pf[ k ] = face_all[i-fStart].centroid[k] - face_all[i-fStart].cgeom[1]->centroid[k] ;
 
 				/*--- P'f Vector ---*/
 				face_all[i-fStart].PPf[ k ] = DotProduct( face_all[i-fStart].Pf, face_all[i-fStart].face_nrml )*face_all[i-fStart].face_nrml[k] ;
@@ -483,36 +485,40 @@ void CGeometry::ComputeFaceCellInformations()
 			face_all[i-fStart].dPPf    = sqrt( DotProduct( face_all[i-fStart].PPf, face_all[i-fStart].PPf ) ) ; 
 			face_all[i-fStart].dNPf    = sqrt( DotProduct( face_all[i-fStart].NPf, face_all[i-fStart].NPf ) ) ; 
 
-		/* For boundary */
+		
+		} else if( face_all[i-fStart].nnghbrs_cell == 1) {/* For boundary */
+
+			for ( int k = 0 ; k < 3 ; k++ ) {
+
+				face_all[i-fStart].PN[ k ] = face_all[i-fStart].centroid[k] - face_all[i-fStart].cgeom[0]->centroid[k] ;
+
+				/*--- Pf Vector ---*/
+				face_all[i-fStart].Pf[ k ] = face_all[i-fStart].PN[ k ] ;
+
+				/*--- Nf Vector ---*/
+				face_all[i-fStart].Nf[ k ] = 0.0 ;
+
+				/*--- P'f Vector ---*/
+				face_all[i-fStart].PPf[ k ] = DotProduct( face_all[i-fStart].Pf, face_all[i-fStart].face_nrml )*face_all[i-fStart].face_nrml[k] ;
+
+				/*--- N'f Vector ---*/
+				face_all[i-fStart].NPf[ k ] = 0.0 ;
+
+				/*--- PP'  Vector ( PP' = Pf - P'f ) ---*/
+				face_all[i-fStart].PPP[ k ] = face_all[i-fStart].Pf[ k ] - face_all[i-fStart].PPf[ k ] ;
+
+				/*--- NN'  Normal Vector ( NN' = Nf - N'f ) ---*/
+				face_all[i-fStart].NNP[ k ] = 0.0 ;
+
+			}//end x,y,z
+			face_all[i-fStart].dPPf    = sqrt( DotProduct( face_all[i-fStart].PPf, face_all[i-fStart].PPf ) ) ; 
+			face_all[i-fStart].dPN     = face_all[i-fStart].dPPf ;
+			face_all[i-fStart].dNPf    = 0.0 ; 
+
 		} else {
-			
-
-			// for ( int k = 0 ; k < 3 ; k++ ) {
-			// 	//face_map_all[ i ]->PN[ k ] = face_map_all[ i ]->c1_centroid[k] - face_map_all[ i ]->c0_centroid[k] ;
-
-			// 	/*--- Pf Vector ---*/
-			// 	face_map_all[ i ]->Pf[ k ] = face_map_all[ i ]->centroid[k] - face_map_all[ i ]->c0_centroid[k] ;
-
-			// 	/*--- Nf Vector ---*/
-			// 	//face_map_all[ i ]->Nf[ k ] = face_map_all[ i ]->centroid[k] - face_map_all[ i ]->c1_centroid[k] ;
-
-			// 	/*--- P'f Vector ---*/
-			// 	face_map_all[ i ]->PPf[ k ] = DotProduct( face_map_all[ i ]->Pf, face_map_all[ i ]->face_nrml )*face_map_all[ i ]->face_nrml[k] ;
-
-			// 	/*--- N'f Vector ---*/
-			// 	//face_map_all[ i ]->NPf[ k ] = DotProduct( face_map_all[ i ]->Nf, face_map_all[ i ]->face_nrml )*face_map_all[ i ]->face_nrml[k] ;
-
-			// 	/*--- PP'  Vector ( PP' = Pf - P'f ) ---*/
-			// 	face_map_all[ i ]->PPP[ k ] = face_map_all[ i ]->Pf[ k ] - face_map_all[ i ]->PPf[ k ] ;
-
-			// 	/*--- NN'  Normal Vector ( NN' = Nf - N'f ) ---*/
-			// 	//face_map_all[ i ]->NNP[ k ] = face_map_all[ i ]->Nf[ k ] - face_map_all[ i ]->NPf[ k ] ;
-			// }//end x,y,z
-			// face_map_all[ i ]->dPPf    = sqrt( DotProduct( face_map_all[ i ]->PPf, face_map_all[ i ]->PPf ) ) ; 
-			// face_map_all[ i ]->dPN     = face_map_all[ i ]->dPPf ;
-			// //face_map_all[ i ]->dNPf    = sqrt( DotProduct( face_map_all[ i ]->NPf, face_map_all[ i ]->NPf ) ) ; 
-
-		}//end face
+			PetscPrintf( PETSC_COMM_SELF, "ERROR @ ComputeFaceCellInformations\n" ) ;
+			PetscEnd();
+		}
 	}
 	PetscBarrier(NULL);
 }
@@ -645,17 +651,12 @@ void CGeometry::ReadBoundaryCellMarkersFromFile(string filename)
 			DMLabelGetStratumSize( face_label, PhysNamesCPU["POWER"], &index_stratum_size ) ;
 			ISGetIndices( index_stratum_IS, &ids) ;
 			
-//PrintfMemory(); 
 			for ( int i = 0 ; i < index_stratum_size ; i++ ) {
-				face_id = ids[ i ] ;
-					if ( face_map_all[face_id]->c0 < cEndInterior ) {
-						//power_face_loop.insert( make_pair( face_id, face_map_all[ face_id ] ) ); 
-						//cout<<face_map_all[ face_id ]<<endl;
-						power_face_loop.push_back( face_map_all[ face_id ] ) ;
-						//cout<<power_face_loop2[i]<<endl<<endl;
+				face_id = ids[ i ] - fStart ;
+					if ( face_all[face_id].cgeom[0]->index < cEndInterior ) {
+						power_face_loop.push_back( &face_all[ face_id ] ) ;
 					}
 			}
-//PrintfMemory() ;
 	
 			ISRestoreIndices(index_stratum_IS, &ids) ;
 
@@ -680,11 +681,9 @@ void CGeometry::ReadBoundaryCellMarkersFromFile(string filename)
 
 			face_id=0 ;
 			for ( int i = 0 ; i < index_stratum_size ; i++ ) {
-				face_id = ids[ i ] ;
-				//PetscPrintf(PETSC_COMM_WORLD, "index: %d\n", face_id) ;
-				if ( face_map_all[face_id]->c0 < cEndInterior ) {
-					//ground_face_loop.insert( make_pair( face_id, face_map_all[ face_id ] ) ); 
-					ground_face_loop.push_back( face_map_all[ face_id ] ) ;
+				face_id = ids[ i ] - fStart ;
+				if ( face_all[face_id].cgeom[0]->index < cEndInterior ) {
+					ground_face_loop.push_back( &face_all[ face_id ] ) ;
 				}
 			}
 			ISRestoreIndices(index_stratum_IS, &ids) ;
@@ -710,9 +709,9 @@ void CGeometry::ReadBoundaryCellMarkersFromFile(string filename)
 
 			face_id=0 ;
 			for ( int i = 0 ; i < index_stratum_size ; i++ ) {
-				face_id = ids[ i ] ;
-				if ( face_map_all[face_id]->c0 < cEndInterior ) {
-					neumann_face_loop.push_back( face_map_all[ face_id ] ) ;
+				face_id = ids[ i ] - fStart ;
+				if ( face_all[face_id].cgeom[0]->index < cEndInterior ) {
+					neumann_face_loop.push_back( &face_all[ face_id ] ) ;
 				}
 			}
 			ISRestoreIndices(index_stratum_IS, &ids) ;
@@ -730,17 +729,15 @@ void CGeometry::ReadBoundaryCellMarkersFromFile(string filename)
 	/*--- interior face ---*/
 		int m = 0 ;
 		for ( unsigned int i = 0 ; i < interior_face_ids.size() ; i++ ){
-			m = interior_face_ids[i] ;
-			if ( face_map_all[m]->nnghbrs_cell == 2 )
+			m = interior_face_ids[i] - fStart  ;
+			if ( face_all[m].nnghbrs_cell == 2 )
 			{
-				if ( face_map_all[m]->c1 >= cEndInterior ) {
-					processors_face_loop.push_back( face_map_all[ m ] ) ;
-				}else	if ( face_map_all[m]->c0 >= cEndInterior ) {
-					//cout<<"face: "<<m<<"\t"<<"c0: "<<face_map_all[m]->c0<<"\t"<<"c1: "<<face_map_all[m]->c1<<", int: "<<cEndInterior<<endl;
-					//cout<<"error"<<endl;
-					processors_face_loop.push_back( face_map_all[ m ] ) ;
+				if ( face_all[m].cgeom[1]->index >= cEndInterior ) {
+					processors_face_loop.push_back( &face_all[ m ] ) ;
+				}else	if ( face_all[m].cgeom[0]->index >= cEndInterior ) {
+					processors_face_loop.push_back( &face_all[ m ] ) ;
 				} else {
-					interior_face_loop.push_back( face_map_all[ m ] ) ;
+					interior_face_loop.push_back( &face_all[ m ] ) ;
 				}
 			}
 		}
@@ -766,15 +763,9 @@ void CGeometry::ReadBoundaryCellMarkersFromFile(string filename)
 			PetscPrintf( PETSC_COMM_SELF,"%d,Loop map error!!!!\n", check_face ) ;
 			PetscEnd() ;
 		}
-			//interior_face_loop
-		//BulidFaceCellLoopMap
 		PetscPrintf( PETSC_COMM_WORLD,"BulidFaceCellLoopMap done ...\n",mpi_rank) ;
 
 }
-
-
-
-
 void CGeometry::ViewDMLabels()
 {
 	  DMLabel        label;

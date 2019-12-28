@@ -14,7 +14,7 @@
             <CellData>
                 <DataArray Name="potential" format="binary" type="Float64">AQAAAACAAAAgAQAAOwAAAA==eJxziTs6Y9WqV/YuRNIMYMDiQCyt48V5cNUqAaLpK1u/2YWGihNNQ+yRI5oWW9qSEBqqRDQNAFeLVoM=</DataArray>
                 <DataArray Name="Ex" format="binary" type="Float64">AQAAAACAAAAgAQAAEgAAAA==eJxjYAABFQeGURorDQDFaQ4R</DataArray>
-                <DataArray Name="Ey" format="binary" type="Float64">AQAAAACAAAAgAQAAKwEAAA==eJwBIAHf/kF1O3trLwC+A2S+lKWH373slmYteuoLPnwUF0q6QhU+h2Pmff0gEj6oyC7ttsMIPgUjqSXpjQG+9FH1fwT29T0VtwPj9ZYjPru3ySjIXCs+7cj/r8DnJj6FJXlg0dwePsXD5i6KCQw+xgpyn9hLID6+9J4qUd0uPhBuSgUGnTE+tPFQkFB+KD4x0zyCXEoaPmWZZnpH6iA+tekkYu8zLj5TExAN5VszPnHW4O7yYTE+g+8AMoZqJz6g8E2H3sIYPjP/tsvBphs+icTMPM6xKj6Zb9nhP0sxPu6qKVE0wiY+DRwzYh9iHD6g86Tl/n4ZPuQXMV7YSwc+k5spsuoUED4AfNnNcxAdPmtnaGivMRI+yErVFNgc9D0fX9Hnn7UGPvg+gQ0=</DataArray>
+                <DataArray Name="Ey" format="binary" type="Float64">AQAAAACAAAAgAQAACAEAAA==eJwLZlLWc9n9d6/DGcnHXp+17Kb86ddLzbLcN/26WFx7R8C+suXaAkmZtvtqA+NXnQgQ3eeXYjZ94dTnto9/8zOKiSnus3+jWPjbxnXfXrb6LoFPrvvuP8uY65Yma8cABgIHoLTDD7cLDSd2m9mlMO5aueepx74IwX+7XPVD9/0sDVt58bDtPpg6CK1w4Pm9OZ8Oqsvu+7CW91p1uqRd796vp5QyPu7tP1K5+6y0FtR8Haj5Rg6/4h6lFTbb2X3svbee632AXekGJeGKbS52zexuoZxKOlDzjaDqzRwszd8Ktv6X3JcV/MDw+CRPu+WXXL5emOVh93Pu7Q9n76hC1ZsdAACZDXHh</DataArray>
             </CellData>
         </Piece>
     </UnstructuredGrid>

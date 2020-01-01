@@ -268,8 +268,35 @@ void CGeometry::ExtractCellGeomInformations()
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"\n") ;
 		}
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-	#endif 
+	#endif
+//-------------------------------------------------------------
+
+
+	for ( PetscInt i=cStart ; i <cEnd ; i++ ) {
+	  PetscInt *points = NULL, numPoints, p, dof, cldof = 0;
+
+		DMPlexGetTransitiveClosure(dmMesh, i, PETSC_TRUE, &numPoints, &points);
+		cout<<"iCell: "<< i <<"\t"<<"numPoints: "<<numPoints<<endl;
+
+		for (int k=0 ; k < numPoints*2 ; k++ ){
+			cout<<points[k]<<endl;
+		}
+		cout<<endl;
+		//DMPlexRestoreTransitiveClosure(dmMesh, i, PETSC_FALSE, &numPoints, &points);
+	}
+
+
+
+
+
+//-------------------------------------------------------------
+	PetscEnd();
+
+
+
+
 	CreateCellNeighborVector();
+
 }
 void CGeometry::CreateCellNeighborVector()
 {

@@ -99,6 +99,7 @@ class CFace
 		double face_nrml_mag ; //, dA, nA[3] ;
 		double face_nrml[3] ;
 		double  centroid[3] ;
+
 		// void calculate_normal_mag( PetscInt iface )
 		// {
 		// 	Vec            coordinates;
@@ -229,7 +230,8 @@ class CGeometry
 
 
 		void ReadBoundaryCellMarkersFromFile(string filename) ;
-
+		vector<int> *node_cell ;
+		vector<int> *cell_node ;
 		//DMLabel CellLabels, FaceLabels ;
 
 		DMLabel cell_label, face_label ;

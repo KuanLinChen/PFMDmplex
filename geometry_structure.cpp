@@ -269,31 +269,76 @@ void CGeometry::ExtractCellGeomInformations()
 		}
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 	#endif
-//-------------------------------------------------------------
 
+	/*---  create cell-to-node lists for convenience. ---*/
+		cell_node = new vector<int> [ cEnd-cStart ] ;
+		int ids ;
+		for ( PetscInt i=cStart ; i <cEnd ; i++ ) {
 
-	for ( PetscInt i=cStart ; i <cEnd ; i++ ) {
-	  PetscInt *points = NULL, numPoints, p, dof, cldof = 0;
-
-		DMPlexGetTransitiveClosure(dmMesh, i, PETSC_TRUE, &numPoints, &points);
-		cout<<"iCell: "<< i <<"\t"<<"numPoints: "<<numPoints<<endl;
-
-		for (int k=0 ; k < numPoints*2 ; k++ ){
-			cout<<points[k]<<endl;
+		  PetscInt *points = NULL, numPoints = 0;
+			DMPlexGetTransitiveClosure(dmMesh, i, PETSC_TRUE, &numPoints, &points);
+			//cout<<"iCell: "<< i <<"\t"<<"numPoints: "<<numPoints<<endl;
+			for (int k=0 ; k < numPoints*2 ; k++ ){
+				ids = points[k];
+				//cout<<points[k]<<endl;
+				if( ids >= vStart and ids < vEnd ) {
+					cell_node[i].push_back( ids ) ;
+				}
+			}
+			//cout<<endl;
+			DMPlexRestoreTransitiveClosure(dmMesh, i, PETSC_FALSE, &numPoints, &points);
 		}
-		cout<<endl;
-		//DMPlexRestoreTransitiveClosure(dmMesh, i, PETSC_FALSE, &numPoints, &points);
-	}
+		#define monitor_cell_node_list false
+		#if ( monitor_cell_node_list == true )
+	 	Vec            coordinates;
+	 	PetscScalar   *coords = NULL;
+	 	PetscInt       coordSize ;
+	 	PetscSection   coordSection;
+
+	 	DMGetCoordinatesLocal ( dmMesh, &coordinates  ) ;
+	 	DMGetCoordinateSection( dmMesh, &coordSection ) ;
+
+		for (int i = cStart ; i < cEnd ; i++ ) {
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, i: %d\n", mpi_rank, i) ;
+			for ( unsigned int k = 0 ; k < cell_node[i].size() ; k++ ) {
+				DMPlexVecGetClosure( dmMesh, coordSection, coordinates, cell_node[i][k], &coordSize, &coords);
+				PetscScalar x1 = coords[0] ;
+				PetscScalar y1 = coords[1] ;
+				PetscScalar z1 = coords[2] ;
+				PetscSynchronizedPrintf( PETSC_COMM_WORLD,"node: %d, x->%e, y->%e, z->%e \n", cell_node[i][k], x1, y1, z1 ) ;
+				DMPlexVecRestoreClosure( dmMesh, coordSection, coordinates, cell_node[i][k], &coordSize, &coords);
+			}
+				PetscSynchronizedPrintf( PETSC_COMM_WORLD,"\n") ;
+		}
+		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+		#endif
 
 
+	/*---  create node-to-cell lists for convenience. ---*/
+		node_cell = new vector<int> [ vEnd-vStart ] ;
+		for ( int i = cStart ; i < cEnd ; i++ ) {
+			for ( unsigned int k = 0 ; k < cell_node[i].size() ; k++ ) {
+				node_cell[ cell_node[i][k] - vStart ].push_back(i) ;
+			}
+		}
 
-
-
+		#define monitor_node_cell_list false
+		#if ( monitor_node_cell_list == true )
+		for (int i = vStart ; i < vEnd ; i++ ) {
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, i: %d\n", mpi_rank, i) ;
+			for ( unsigned int k = 0 ; k < node_cell[i-vStart].size() ; k++ ) {
+				PetscSynchronizedPrintf( PETSC_COMM_WORLD,"%d\n", node_cell[i-vStart][k]) ;
+			}
+			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"\n") ;
+		}
+		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+		#endif
 //-------------------------------------------------------------
+
+
+
+
 	PetscEnd();
-
-
-
 
 	CreateCellNeighborVector();
 

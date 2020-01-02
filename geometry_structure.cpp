@@ -43,7 +43,7 @@ void CGeometry::ReadMeshFromFile( string filename )
     	FVM:   Two points p and q are adjacent if q \in support(p+cone(p)), useCone = PETSC_TRUE,  useClosure = PETSC_FALSE
     	FVM++: Two points p and q are adjacent if q \in star(closure(p)),   useCone = PETSC_TRUE,  useClosure = PETSC_TRUE
 	*/
-		DMSetBasicAdjacency( dmMesh, PETSC_TRUE, PETSC_FALSE ) ;
+		DMSetBasicAdjacency( dmMesh, PETSC_TRUE, PETSC_TRUE ) ;
 
 
 	/*--- Distribute mesh over processes ---*/
@@ -322,7 +322,7 @@ void CGeometry::ExtractCellGeomInformations()
 			}
 		}
 
-		#define monitor_node_cell_list false
+		#define monitor_node_cell_list true
 		#if ( monitor_node_cell_list == true )
 		for (int i = vStart ; i < vEnd ; i++ ) {
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"mpi_rank: %d, i: %d\n", mpi_rank, i) ;

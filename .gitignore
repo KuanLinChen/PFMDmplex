@@ -1,2 +1,8 @@
 
 *.o
+
+*.vtk
+
+*.vtu
+
+main

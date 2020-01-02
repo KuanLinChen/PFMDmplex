@@ -333,13 +333,6 @@ void CGeometry::ExtractCellGeomInformations()
 		}
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 		#endif
-//-------------------------------------------------------------
-
-
-
-
-	PetscEnd();
-
 	CreateCellNeighborVector();
 
 }

@@ -22,7 +22,7 @@ class CCell
 	CCell()
 	{
 		index = gindex = -999 ;
-		centroid[0] = centroid[1] = centroid[3] =  0.0 ;
+		centroid[0] = centroid[1] = centroid[2] =  0.0 ;
 		volume = 0.0 ;
 	};
 	vector<int> nghbr_cell ;

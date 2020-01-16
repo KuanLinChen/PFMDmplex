@@ -17,45 +17,7 @@ int main(int argc, char **argv)
 {
 	PetscInitialize( &argc, &argv, (char *)0, 0) ;
 
-  QSMatrix<double> m(3, 3, 0.0) ;
-
-  m(0,0) = 2 ; m(0,1) = 2 ; m(0,2) = 1 ;
-  m(1,0) = 1 ; m(1,1) = 3 ; m(1,2) = 2 ;
-  m(2,0) =-2 ; m(2,1) = 1 ; m(2,2) = 2 ;
-
-  //cout<<det<<endl;
-	cout<<"A: "<<m.determinant( m, m.get_rows() )<<endl; 
-	cout<<"B: "<<m.determinant( m, m.get_rows() )<<endl; 
-	//PetscEnd();
-  double det=0.0 ;
-for ( int i = 0 ; i < 2000; i++ ){
-	//m.determinant( m, m.get_rows() );
-	//m.determinant( m, m.get_rows() );
-	//m.determinant( m, m.get_rows() );
-	det =m.determinant( m, m.get_rows() );
-	cout<< det <<endl ;
-}
-
-
-PetscEnd();
-	/* Test Matrix allocate. */
-	//double **A ;
-	//A = MatAlloc( 100000, 10000 ) ;
-	//MatFree( A, 100000, 10000 ) ;
-
-// 	Mat AA ;
-// 	PetscScalar **AAA ;
-// 	cout<<"A"<<endl;
-// 	MatCreateSeqDense( PETSC_COMM_SELF, 5, 5, NULL, &AA );
-// 	cout<<"B"<<endl;
-
-//  	MatDenseGetArray( AA, AAA ) ;
-// 	cout<<"B"<<endl;
-
-// 	MatDenseRestoreArray( AA, AAA );
-// 	cout<<"C"<<endl;
-// 	MatDestroy(&AA);
-// 	cout<<"D"<<endl;
+  QSMatrix<double> m(10, 10, 1.0 ) ;
 
 // PetscEnd() ;
 

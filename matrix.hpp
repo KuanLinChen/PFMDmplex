@@ -18,14 +18,20 @@ template <typename T> class QSMatrix {
   QSMatrix<T>& operator=(const QSMatrix<T>& rhs);
 
   // Matrix mathematical operations                                                                                                                                                                                               
-  QSMatrix<T> operator+(const QSMatrix<T>& rhs);
+  QSMatrix<T>  operator+ (const QSMatrix<T>& rhs);
   QSMatrix<T>& operator+=(const QSMatrix<T>& rhs);
-  QSMatrix<T> operator-(const QSMatrix<T>& rhs);
+  QSMatrix<T>  operator- (const QSMatrix<T>& rhs);
   QSMatrix<T>& operator-=(const QSMatrix<T>& rhs);
-  QSMatrix<T> operator*(const QSMatrix<T>& rhs);
+  QSMatrix<T>  operator* (const QSMatrix<T>& rhs);
   QSMatrix<T>& operator*=(const QSMatrix<T>& rhs);
-  QSMatrix<T> transpose();
-   T determinant( QSMatrix<T>& mm, unsigned nn  ) ;
+
+
+  QSMatrix<T>  transpose();
+  QSMatrix<T>  adjoint();
+  QSMatrix<T> minor( unsigned, unsigned ) ;
+
+
+  T det() ;
 
   // Matrix/scalar operations                                                                                                                                                                                                     
   QSMatrix<T> operator+(const T& rhs);
@@ -44,6 +50,7 @@ template <typename T> class QSMatrix {
   // Access the row and column sizes                                                                                                                                                                                              
   unsigned get_rows() const;
   unsigned get_cols() const;
+  void print();
 
 };
 

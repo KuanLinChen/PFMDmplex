@@ -3,32 +3,38 @@
 
 #include "matrix.hpp"
 
-// Parameter Constructor                                                                                                                                                      
+/*--- Constructor ---*/
 template<typename T>
-QSMatrix<T>::QSMatrix(unsigned _rows, unsigned _cols, const T& _initial) {
-  mat.resize(_rows);
-  for (unsigned i=0; i<mat.size(); i++) {
-    mat[i].resize(_cols, _initial);
-  }
-  rows = _rows;
-  cols = _cols;
+QSMatrix<T>::QSMatrix(unsigned _rows, unsigned _cols, const T& _initial) 
+{
+	mat.resize(_rows);
+	for (unsigned i=0; i<mat.size(); i++) {
+		mat[i].resize(_cols, _initial);
+	}
+	rows = _rows;
+	cols = _cols;
 }
 
-// Copy Constructor                                                                                                                                                           
+/* Duplicate the matrix */
 template<typename T>
-QSMatrix<T>::QSMatrix(const QSMatrix<T>& rhs) {
+QSMatrix<T>::QSMatrix(const QSMatrix<T>& rhs) 
+{
   mat = rhs.mat;
   rows = rhs.get_rows();
   cols = rhs.get_cols();
 }
 
-// (Virtual) Destructor                                                                                                                                                       
+/*--- (Virtual) Destructor ---*/
 template<typename T>
-QSMatrix<T>::~QSMatrix() {}
+QSMatrix<T>::~QSMatrix() {
 
-// Assignment Operator                                                                                                                                                        
+
+}
+
+/*--- Assignment Operator ---*/
 template<typename T>
-QSMatrix<T>& QSMatrix<T>::operator=(const QSMatrix<T>& rhs) {
+QSMatrix<T>& QSMatrix<T>::operator=(const QSMatrix<T>& rhs) 
+{
   if (&rhs == this)
     return *this;
 
@@ -51,9 +57,17 @@ QSMatrix<T>& QSMatrix<T>::operator=(const QSMatrix<T>& rhs) {
   return *this;
 }
 
-// Addition of two matrices                                                                                                                                                   
+/*--- Addition of two matrices ---*/
 template<typename T>
-QSMatrix<T> QSMatrix<T>::operator+(const QSMatrix<T>& rhs) {
+QSMatrix<T> QSMatrix<T>::operator+(const QSMatrix<T>& rhs) 
+{
+	unsigned new_rows = rhs.get_rows();
+  unsigned new_cols = rhs.get_cols();
+  if ( rows != new_rows or cols != new_cols )  {
+  	cout<<"Martix size are not matach. (operator+) "<<endl;
+  	exit(1) ;
+  }
+
   QSMatrix result(rows, cols, 0.0);
 
   for (unsigned i=0; i<rows; i++) {
@@ -65,7 +79,7 @@ QSMatrix<T> QSMatrix<T>::operator+(const QSMatrix<T>& rhs) {
   return result;
 }
 
-// Cumulative addition of this matrix and another                                                                                                                             
+// Cumulative addition of this matrix and another
 template<typename T>
 QSMatrix<T>& QSMatrix<T>::operator+=(const QSMatrix<T>& rhs) {
   unsigned rows = rhs.get_rows();
@@ -80,7 +94,7 @@ QSMatrix<T>& QSMatrix<T>::operator+=(const QSMatrix<T>& rhs) {
   return *this;
 }
 
-// Subtraction of this matrix and another                                                                                                                                     
+/*--- Subtraction of this matrix and another ---*/
 template<typename T>
 QSMatrix<T> QSMatrix<T>::operator-(const QSMatrix<T>& rhs) {
   unsigned rows = rhs.get_rows();
@@ -137,9 +151,10 @@ QSMatrix<T>& QSMatrix<T>::operator*=(const QSMatrix<T>& rhs) {
   return *this;
 }
 
-// Calculate a transpose of this matrix                                                                                                                                       
+/*--- Calculate a transpose of this matrix ---*/
 template<typename T>
-QSMatrix<T> QSMatrix<T>::transpose() {
+QSMatrix<T> QSMatrix<T>::transpose() 
+{
   QSMatrix result(rows, cols, 0.0);
 
   for (unsigned i=0; i<rows; i++) {
@@ -151,47 +166,81 @@ QSMatrix<T> QSMatrix<T>::transpose() {
   return result;
 }
 
-// Calculate a determinant of this matrix                                                                                                                                       
+/* Get minor matrix for matrix calculation. */
 template<typename T>
-T QSMatrix<T>::determinant( QSMatrix<T>& mm, unsigned nn ) {
-  T det=0.0 ;
-  unsigned h, k ;
+QSMatrix<T> QSMatrix<T>::minor( unsigned p, unsigned q ) 
+{
+	QSMatrix results( rows-1, cols-1, 0.0);
 
-  if( nn==1 ) 
-  {
+	unsigned i = 0, j = 0; 
+	unsigned n = rows ; 
+	//cout<<"p: "<<p<<"\t"<<"q: "<<q<<"\t"<<"n: "<<n<<endl;
+	// Looping for each element of the matrix 
+	for (unsigned row = 0; row < n; row++) { 
+		for (unsigned col = 0; col < n; col++)  { 
+			//cout<<"row: "<<row<<"\t"<<"col: "<<col<<"\t"<<this->mat[row][col]<<endl;
+			/* Copying into temporary matrix only those element, which are not in given row and column */
+			if (row != p && col != q) { 
+				results(i, j) = this->mat[row][col]; 
+				//cout<<this->mat[row][col]<<endl;
+				j++ ;
+				// Row is filled, so increase row index and reset col index 
+				if (j == n-1 ) { 
+					j = 0; 
+					i++ ; 
+				}
+			}
+		}//end column 
+	}//end row
 
-    det = mm(0,0) ;
-
-  } else if( nn==2 ) {
-
-    det =  mm(0,0)*mm(1,1) - mm(0,1) * mm(1,0)  ;
-
-  } else {
-
-    QSMatrix temp(nn, nn, 0.0) ;
-    for ( unsigned p = 0 ; p < nn ; p++ ) {
-
-      h = 0;
-      k = 0;
-      for ( unsigned i = 1 ; i < nn ; i++ ) {
-        for ( unsigned j = 0 ; j < nn ; j++ ) {
-          if ( j==p ) {
-            continue;
-          }
-          temp(h,k) = mm(i,j);
-          k++;
-          if ( k == nn-1 ) {
-            h++;
-            k=0;
-          }//if k
-        }//
-      }
-
-      det=det + mm(0,p)*pow(-1,p)*temp.determinant(temp, nn-1 ) ;
-    }//End p-loop
-  }//end if 
-  return det ;
+	return results;
 }
+/* */
+template<typename T>
+T QSMatrix<T>::det()
+{ 
+	unsigned n = rows ;
+	T results=0.0 ; 
+	if      ( n==1 ) return this->mat[0][0] ;
+	else if ( n==2 ) return this->mat[0][0] * this->mat[1][1] -this->mat[1][0] * this->mat[0][1] ;
+	QSMatrix C(n-1, n-1, 0.0 ) ; 
+
+	for ( unsigned f = 0; f < n; f++ ) { 
+		C = minor( 0, f ) ; 
+		results = results + this->mat[0][f]*pow(-1,f)*C.det() ; 
+	} 
+	return results ; 
+} 
+
+
+
+/*--- Adjoint ---*/
+template<typename T>
+QSMatrix<T> QSMatrix<T>::adjoint() 
+{
+	unsigned n = rows ;
+
+	if ( n==1 ) return this->mat[0][0] ;
+
+	QSMatrix   C(n-1, n-1, 0.0 ) ;
+	QSMatrix adj(  n,   n, 0.0 ) ; 
+
+	// temp is used to store cofactors of A[][] 
+	int sign = 1; 
+
+	for ( int i=0; i<rows; i++) { 
+		for ( int j=0; j<cols; j++) { 
+
+			C = minor( i, j ) ; 
+			sign = ((i+j)%2==0)? 1: -1; 
+
+			adj[j][i] = (sign)*(*C.det()); 
+
+		}//end cols
+	}//end rows 
+  return adj;
+}
+
 
 
 // Matrix/scalar addition                                                                                                                                                     
@@ -300,4 +349,15 @@ unsigned QSMatrix<T>::get_cols() const {
   return this->cols;
 }
 
+template<typename T>
+void  QSMatrix<T>::print() 
+{
+	for (unsigned j=0; j<cols; j++){
+		for (unsigned i=0; i<rows; i++){
+			cout<<this->mat[i][j]<<"\t" ;
+		} 
+		cout<<endl;
+	} 
+	cout<<endl;
+}
 #endif

@@ -338,15 +338,15 @@ void CGeometry::ExtractCellGeomInformations()
 }
 void CGeometry::CreateCellNeighborVector()
 {
-	string Type="cell_face" ;
-	//string Type="cell_cell" ;
+	//string Type="cell_face" ;
+	string Type="cell_cell" ;
 	int cell_nnghbrs_cell, face_nnghbrs_cell ;
 
 	int             cell_nghbr_cell_index ;
 	const PetscInt *cell_nghbr_face_index ;
 	PetscInt cell_nnghbrs_face ;//, face_nnghbrs_node ;
 	//const PetscInt *cell_nghbr_node_list ;
-
+	unsigned int iCell, iNode, nCell, nNode ;
 	if ( Type == "cell_face" ) {
 
 		for( PetscInt i=cStart ; i <cEnd ; i++ ) {
@@ -378,43 +378,25 @@ void CGeometry::CreateCellNeighborVector()
 
 	} else if ( Type == "cell_cell" ) {
 
-		// for( PetscInt i=cStart ; i <cEndInterior ; i++ ) {
+		for( PetscInt i=cStart ; i <cEndInterior ; i++ ) {
 
-		// 	DMPlexGetConeSize( dmMesh, i, &cell_nnghbrs_face) ;
-		// 	DMPlexGetCone    ( dmMesh, i, &cell_nghbr_face_index ) ;	
+			nNode = cell_node[i].size() ;
 
-		// 	for ( int k=0 ; k < cell_nghbr_face ; k++ ) {
+			for ( unsigned int n=0 ; n < nNode; n++ ) {
+				iNode = cell_node[i][n]-vStart ;
+				nCell = node_cell[iNode].size() ;
+				for (unsigned int c=0 ; c < nCell ; c++ ) {
+					iCell = node_cell[iNode][c] ;
+					cell_all[ i ].nghbr_cell.push_back(iCell) ;
+				}//end node_cell list
+			}//end cell_node list
 
-		// 		DMPlexGetConeSize( dmMesh, cell_nghbr_face_index[k], &face_nnghbrs_node ) ;
-		// 		cout<<"face nnghbrs node: "<<face_nnghbrs_node<<endl;
-		// 		DMPlexGetCone    ( dmMesh, i, &cell_nghbr_node_list ) ;
-		// 		for (int l=0 ; l < face_nnghbrs_node ; l++ ) {
-		// 			cout<<"list["<<k<<"]: "<<cell_nghbr_node_list[k]<<endl;
-		// 		}
-		// 	}
-		// }
+			sort( cell_all[ i ].nghbr_cell.begin(), cell_all[ i ].nghbr_cell.end() ) ;
 
-		// for ( PetscInt i=cStart ; i <cEnd ; i++ ) {
-	 //    PetscInt *points = NULL, numPoints, p, dof, cldof = 0;
-
-		// 	DMPlexGetTransitiveClosure(dmMesh, i, PETSC_FALSE, &numPoints, &points);
-		// 	cout<<"i: "<< i <<endl;
-		// 	for (int k=0 ; k < numPoints ; k++ ){
-		// 		cout<<points[k]<<endl;
-		// 	}cout<<endl;
-		// 	DMPlexRestoreTransitiveClosure(dmMesh, i, PETSC_FALSE, &numPoints, &points);
-		// }
-
-
-
-		// for ( PetscInt i=fStart ; i < fEnd ; i++ ) {
-		// 	DMPlexGetConeSize(dmMesh, i, &face_nnghbrs_node ) ;
-		// 	cout<<"face nnghbrs node: "<<face_nnghbrs_node<<endl;
-		// 	DMPlexGetCone    ( dmMesh, i, &cell_nghbr_node_list ) ;
-		// 	for (int k=0 ; k < face_nnghbrs_node ; k++ ) {
-		// 		cout<<"list["<<k<<"]: "<<cell_nghbr_node_list[k]<<endl;
-		// 	}
-		// }
+			vector<int>::iterator it;
+			it = std::unique( cell_all[ i ].nghbr_cell.begin(), cell_all[ i ].nghbr_cell.end() ) ;
+			cell_all[ i ].nghbr_cell.resize( distance(cell_all[ i ].nghbr_cell.begin(),it) ); 
+		}//End cell-loop.
 
 
 	}//End cell_cell
@@ -425,7 +407,7 @@ void CGeometry::CreateCellNeighborVector()
 			PetscSynchronizedPrintf( PETSC_COMM_WORLD,"\n") ;
 		}
 		PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-		//PetscEnd();
+		PetscEnd();
 	#endif 
 }
 void CGeometry::ExtractFaceGeomInformations()

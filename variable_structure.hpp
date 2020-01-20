@@ -3,6 +3,8 @@
 #include <petsc.h>
 #include "linear_solvers_structure.hpp"
 #include "geometry_structure.hpp"
+#include "matrix.hpp"
+
 using namespace std;
 // class Scalar
 // {

@@ -127,14 +127,22 @@ QSMatrix<T>& QSMatrix<T>::operator-=(const QSMatrix<T>& rhs) {
 
 // Left multiplication of this matrix and another                                                                                                                              
 template<typename T>
-QSMatrix<T> QSMatrix<T>::operator*(const QSMatrix<T>& rhs) {
-  unsigned rows = rhs.get_rows();
-  unsigned cols = rhs.get_cols();
-  QSMatrix result(rows, cols, 0.0);
+QSMatrix<T> QSMatrix<T>::operator*(const QSMatrix<T>& rhs) 
+{
+  unsigned A_rows = rows ;
+  unsigned A_cols = cols ;
+  unsigned B_rows = rhs.get_rows();
+  unsigned B_cols = rhs.get_cols();
+  //unsigned rows = rows ;
+  if ( A_cols != B_rows ) {
+    cout<<"Error! column of first matrix not equal to row of second. "<<endl;
+    exit(1) ;
+  }
+  QSMatrix result( A_rows, B_cols, 0.0);
 
-  for (unsigned i=0; i<rows; i++) {
-    for (unsigned j=0; j<cols; j++) {
-      for (unsigned k=0; k<rows; k++) {
+  for (unsigned i=0; i<A_rows; i++) {
+    for (unsigned j=0; j<B_cols; j++) {
+      for (unsigned k=0; k<A_cols; k++) {
         result(i,j) += this->mat[i][k] * rhs(k,j);
       }
     }
@@ -155,14 +163,13 @@ QSMatrix<T>& QSMatrix<T>::operator*=(const QSMatrix<T>& rhs) {
 template<typename T>
 QSMatrix<T> QSMatrix<T>::transpose() 
 {
-  QSMatrix result(rows, cols, 0.0);
 
-  for (unsigned i=0; i<rows; i++) {
-    for (unsigned j=0; j<cols; j++) {
-      result(i,j) = this->mat[j][i];
+  QSMatrix result(cols, rows, 0.0);
+  for (unsigned j=0; j<cols; j++) {
+    for (unsigned i=0; i<rows; i++) {
+      result(j,i) = this->mat[i][j];
     }
-  }
-
+  } 
   return result;
 }
 
@@ -220,7 +227,7 @@ QSMatrix<T> QSMatrix<T>::adjoint()
 {
 	unsigned n = rows ;
 
-	if ( n==1 ) return this->mat[0][0] ;
+	//if ( n==1 ) return this->mat ;
 
 	QSMatrix   C(n-1, n-1, 0.0 ) ;
 	QSMatrix adj(  n,   n, 0.0 ) ; 
@@ -234,7 +241,7 @@ QSMatrix<T> QSMatrix<T>::adjoint()
 			C = minor( i, j ) ; 
 			sign = ((i+j)%2==0)? 1: -1; 
 
-			adj[j][i] = (sign)*(*C.det()); 
+			adj(j,i) = (sign)*(C.det()); 
 
 		}//end cols
 	}//end rows 
@@ -352,9 +359,10 @@ unsigned QSMatrix<T>::get_cols() const {
 template<typename T>
 void  QSMatrix<T>::print() 
 {
-	for (unsigned j=0; j<cols; j++){
-		for (unsigned i=0; i<rows; i++){
-			cout<<this->mat[i][j]<<"\t" ;
+	for (unsigned i=0; i<rows; i++){
+	 for (unsigned j=0; j<cols; j++){
+			printf("% 3.4e   ", this->mat[i][j] ) ;
+			//cout<<this->mat[i][j]<<"\t" ;
 		} 
 		cout<<endl;
 	} 

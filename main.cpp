@@ -3,7 +3,7 @@
 #include "geometry_structure.hpp"
 #include "solver_poisson.hpp"
 #include "solver_sepcies.hpp"
-#include "matrix.hpp"
+
 
 //#include "tool_function_petsc.hpp"
 
@@ -17,9 +17,31 @@ int main(int argc, char **argv)
 {
 	PetscInitialize( &argc, &argv, (char *)0, 0) ;
 
-  QSMatrix<double> m(10, 10, 1.0 ) ;
+   QSMatrix<double> m(3, 2, 0.0 ), n( 2,2,0.0 ) ;
 
-// PetscEnd() ;
+  m(0,0) = 1.0 ; m(0,1) = 2.0 ;
+  m(1,0) = 3.0 ; m(1,1) = 4.0 ;
+  m(2,0) = 5.0 ; m(2,1) = 6.0 ;
+  //n = m ;
+  //QSMatrix<double> m(3, 2, 0.0 )
+  QSMatrix<double> tran = m.transpose();
+  tran.print();
+  n = tran*m ;
+
+ // n.print();
+  //QSMatrix<double> adj(2, 2, 0.0 ) ;
+  //adj = m.adjoint();
+ 	//adj.print();
+
+ 	//PetscEnd();
+
+  // QSMatrix<double> inv(3, 3, 0.0 ) ;
+
+  // inv = adj/m.det();
+
+  // inv.print();
+
+ // PetscEnd() ;
 
 	MPI_Comm_size(PETSC_COMM_WORLD,&mpi_size);
 	MPI_Comm_rank(PETSC_COMM_WORLD,&mpi_rank);

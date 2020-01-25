@@ -5,6 +5,7 @@
 #include "geometry_structure.hpp"
 #include "variable_structure.hpp"
 using namespace std;
+
 class CCentJST
 {
     
@@ -30,9 +31,16 @@ public:
 
   CGeometry *m ;
   CVariable *var ;
-  CSysSolve *s ;
+  // CSysSolve *s ;
   
-  Vec Gradient[3];
+  // Vec Gradient[3];
+
+  Vec Und_Lapl ;
+  Vec Residue ;
+  void Undivided_Laplacian(Vec);
+
+  void ComputeResidual();
+
   void Init( CGeometry *, CVariable * ) ;
   /*!
    * \brief Constructor of the class.
@@ -55,5 +63,36 @@ public:
    * \param[out] val_Jacobian_j - Jacobian of the numerical method at node j (implicit computation).
    * \param[in] config - Definition of the particular problem.
    */
+  //void ComputeResidual();
+};
+class CUpwTVD
+{
+    
+private:
+
+public:
+
+  CGeometry *m ;
+  CVariable *var ;
+  string var_name ;
+  // CSysSolve *s ;
+  // Vec Gradient[3];
+
+  Vec Residue ;
+  Vec Gradient[3];
+  void Init( CGeometry *, CVariable *, string ) ;
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] val_nDim - Number of dimension of the problem.
+   * \param[in] val_nVar - Number of variables of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  CUpwTVD();
+  void CalculateGraditntLSQ() ;
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~CUpwTVD(void){};
+    
   //void ComputeResidual();
 };

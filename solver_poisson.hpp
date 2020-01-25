@@ -16,7 +16,6 @@ public:
   CVariable *var ;
   CSysSolve *s ;
   
-  Vec Gradient[3];
   void Init( CGeometry *, CVariable * ) ;
   void Solve();
   //void Solver(CVariable * var);

@@ -105,14 +105,14 @@ void CPoisson::Bulid_A_B()
 void CPoisson::CalculateGraditntLSQ()
 {
 	PetscScalar *Gx, *Gy, *Gz, *value ;
-	VecZeroEntries( var->Field[0] ) ;
-	VecZeroEntries( var->Field[1] ) ;
-	//VecZeroEntries( var->Field[2] ) ;
+	PetscScalar **Grad ;
+	PetscInt ndim = m->GetDimension();
 
-	VecGetArray(var->Field[0], &Gx) ;
-	VecGetArray(var->Field[1], &Gy) ;
-	//VecGetArray(var->Field[2], &Gz) ;
+	for (int i = 0 ; i < ndim ; i++ ) {
+		VecZeroEntries( var->Field[i] ) ;
+	}
 
+	VecGetArrays( var->Field, ndim, &Grad ) ;
 	VecGetArray(var->Potential, &value) ;
 
 	double dVar=0.0 ;
@@ -124,37 +124,38 @@ void CPoisson::CalculateGraditntLSQ()
 	}
 
 	for ( int i = m->cStart ; i < m->cEndInterior ; i++ ) {
-
+		/* Cell */
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
 
 			ids = m->cell_all[i].nghbr_cell[k] ;
 			dVar =  value[ ids ]- value[ i ];
-			Gx[ i ] = Gx[ i ] +  m->cell_all[i].nghbr_cell_Cx[ k ]*dVar ;
-			Gy[ i ] = Gy[ i ] +  m->cell_all[i].nghbr_cell_Cy[ k ]*dVar ;
+			//Grad[0][ i ] = Grad[0][ i ] +  m->cell_all[i].nghbr_cell_Cx[ k ]*dVar ;
+			//Grad[1][ i ] = Grad[1][ i ] +  m->cell_all[i].nghbr_cell_Cy[ k ]*dVar ;
+			for ( int n = 0 ; n < ndim ; n++ ) {
+				Grad[n][ i ] = Grad[n][ i ] +  m->cell_all[i].lsq_cell[ n ][ k ]*dVar ;
+			}
 		}
+		/* Face */
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_face.size() ; k++ ) {
 
 			ids = m->cell_all[i].nghbr_face[ k ]-m->fStart ;
 			dVar =  var->FaceField[ids] - value[ i ];
-			Gx[ i ] = Gx[ i ] +  m->cell_all[i].nghbr_face_Cx[ k ]*dVar ;
-			Gy[ i ] = Gy[ i ] +  m->cell_all[i].nghbr_face_Cy[ k ]*dVar ;
-
+			//Grad[0][ i ] = Grad[0][ i ] +  m->cell_all[i].nghbr_face_Cx[ k ]*dVar ;
+			//Grad[1][ i ] = Grad[1][ i ] +  m->cell_all[i].nghbr_face_Cy[ k ]*dVar ;
+			for ( int n = 0 ; n < ndim ; n++ ) {
+				Grad[n][ i ] = Grad[n][ i ] +  m->cell_all[i].lsq_face[ n ][ k ]*dVar ;
+			}
 		}		
 	}//End cell loop
 
-	VecRestoreArray(var->Field[0], &Gx) ;
-	VecRestoreArray(var->Field[1], &Gy) ;
-	VecRestoreArray(var->Field[2], &Gz) ;
+	VecRestoreArrays( var->Field, ndim, &Grad ) ;
+
 	VecRestoreArray(var->Potential, &value) ;
 
 	/* update */
-	DMGlobalToLocalBegin( dmCell, var->Field[0], INSERT_VALUES, var->ElectricField[0] ) ;
-	DMGlobalToLocalEnd  ( dmCell, var->Field[0], INSERT_VALUES, var->ElectricField[0] ) ;
-
-	DMGlobalToLocalBegin( dmCell, var->Field[1], INSERT_VALUES, var->ElectricField[1] ) ;
-	DMGlobalToLocalEnd  ( dmCell, var->Field[1], INSERT_VALUES, var->ElectricField[1] ) ;
-//DMGlobalToLocalBegin( dmCell, var->Field[2], INSERT_VALUES, var->ElectricField[2] ) ;
-//DMGlobalToLocalEnd  ( dmCell, var->Field[2], INSERT_VALUES, var->ElectricField[2] ) ;
+	for ( int i=0 ; i < ndim ; i++ ){
+		DMGlobalToLocal( dmCell, var->Field[i], INSERT_VALUES, var->ElectricField[i]) ;
+	}
 	
 }
 

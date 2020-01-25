@@ -30,8 +30,8 @@ public:
 
   void allocate_variable_vectors() ;
   double *FaceField ;//local
-  Vec Field[3] ;
-  Vec Potential, ElectricField[3] ;
+  Vec *Field, Scalar ;
+  Vec Potential, *ElectricField ;
   Vec Debug ;
 
 };

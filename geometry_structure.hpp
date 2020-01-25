@@ -27,13 +27,10 @@ class CCell
 	};
 	vector<int> nghbr_cell ;
 	vector<int> nghbr_face ;
-	vector<double> nghbr_cell_Cx;
-	vector<double> nghbr_cell_Cy;
-	vector<double> nghbr_cell_Cz;
+	
+	vector<double> lsq_cell[3];
+	vector<double> lsq_face[3];
 
-	vector<double> nghbr_face_Cx;
-	vector<double> nghbr_face_Cy;
-	vector<double> nghbr_face_Cz;
 
 	int  index,  /*!< \brief  local cell index. */
 	    gindex ; /*!< \brief global cell index. */

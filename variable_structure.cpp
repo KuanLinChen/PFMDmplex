@@ -8,24 +8,37 @@ void CVariable::Init( CGeometry *mm )
 }
 void CVariable::allocate_variable_vectors()
 {
-	VecDuplicate( m->lVec, &Potential ) ; PetscObjectSetName((PetscObject)Potential,"potential");
-	VecDuplicate( m->lVec, &Debug ) ; PetscObjectSetName((PetscObject)Debug,"Debug");
+	PetscInt ndim = m->GetDimension() ;
+	//Potential
+	VecDuplicate( m->lVec, &Potential ) ; 
+	PetscObjectSetName((PetscObject)Potential,"potential");
+	//
+	VecDuplicate( m->lVec, &Debug ) ; 
+	PetscObjectSetName((PetscObject)Debug,"Debug");
+	//Electric field
+	VecDuplicateVecs( m->lVec, ndim, &ElectricField);
+	PetscObjectSetName((PetscObject) ElectricField[0],"Ex");
+	PetscObjectSetName((PetscObject) ElectricField[1],"Ey");
+	if ( ndim ==3 )
+	PetscObjectSetName((PetscObject) ElectricField[2],"Ez");
 
-	VecDuplicate( m->lVec, &ElectricField[0] ) ; PetscObjectSetName((PetscObject) ElectricField[0],"Ex");
-	VecDuplicate( m->lVec, &ElectricField[1] ) ; PetscObjectSetName((PetscObject) ElectricField[1],"Ey");
-	VecDuplicate( m->lVec, &ElectricField[2] ) ; PetscObjectSetName((PetscObject) ElectricField[2],"Ez");
-	for ( int i = 0 ; i < 3 ; i++ ){
-		VecDuplicate( m->gVec, &Field[i] ) ;
-	}
+	// Field vector
+	VecDuplicateVecs( m->gVec, ndim, &Field);
+
+	VecDuplicate( m->gVec, &Scalar ) ;
+
 	compute_LSQ_coefficient() ;
 	FaceField = new double [ m->fEnd-m->fStart ] ;
 }
 void CVariable::compute_LSQ_coefficient()
 {
-	double dx, dy ;
-	int  ids ;
+	PetscInt ndim = m->GetDimension();
 
-	int ndim = m->GetDimension(), nnghbrs=0 ;
+	double *dDist = NULL;
+	dDist = new double[ndim] ;
+
+	int  ids=0, nnghbrs=0 ;
+
 	QSMatrix<double> A( ndim, ndim, 0.0 ), A_inv( ndim, ndim, 0.0 ), adj( ndim, ndim, 0.0 ) ;
 
 
@@ -35,49 +48,48 @@ void CVariable::compute_LSQ_coefficient()
 
 		QSMatrix<double> D( nnghbrs, ndim, 0.0 ), Coeff( nnghbrs, ndim, 0.0 ) ;
 
-
+		//cell
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
 
 			ids = m->cell_all[i].nghbr_cell[k] ;
 
-			dx = m->cell_all[ids].centroid[0]  - m->cell_all[i].centroid[0] ;
-			dy = m->cell_all[ids].centroid[1]  - m->cell_all[i].centroid[1] ;
-
-			D( k, 0 ) = dx ; 
-			D( k, 1 ) = dy ; 
-
+			for ( int n=0 ; n < ndim ; n++ ){
+				dDist[n] = m->cell_all[ids].centroid[n]  - m->cell_all[i].centroid[n] ;
+				D( k, n ) = dDist[n] ; 
+			}
 		}
-
+		//face
 		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_face.size() ; k++ ) {
 
 			ids = m->cell_all[i].nghbr_face[k] - m->fStart ;
 
-			dx =  m->face_all[ids].centroid[0] - m->cell_all[i].centroid[0] ;
-			dy =  m->face_all[ids].centroid[1] - m->cell_all[i].centroid[1] ;
-
-			D( m->cell_all[i].nghbr_cell.size() + k , 0 ) = dx ; 
-			D( m->cell_all[i].nghbr_cell.size() + k , 1 ) = dy ; 
+			for ( int n = 0 ; n < ndim ; n++ ) {
+				dDist[n] = m->face_all[ids].centroid[n]  - m->cell_all[i].centroid[n] ;
+				D( m->cell_all[i].nghbr_cell.size()+k, n ) = dDist[n] ; 
+			}
 		}
 
+		//calculate the lsq-coefficient.
 		QSMatrix<double> DTran = D.transpose();
-
 		A = DTran*D ;
 		adj = A.adjoint();
 		A_inv = adj/A.det();
-
 		Coeff = A_inv*DTran ;
 
-		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ )
-		{
-			m->cell_all[i].nghbr_cell_Cx.push_back( Coeff(0,k) ) ;
-			m->cell_all[i].nghbr_cell_Cy.push_back( Coeff(1,k) ) ;
+		//cell
+		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
+			for ( int n = 0 ; n < ndim ; n++ ) {
+				m->cell_all[i].lsq_cell[n].push_back( Coeff(n,k) ) ;
+			}
 		}
-
-		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ )
-		{
-			m->cell_all[i].nghbr_face_Cx.push_back( Coeff(0,k+m->cell_all[i].nghbr_cell.size())) ;
-			m->cell_all[i].nghbr_face_Cy.push_back( Coeff(1,k+m->cell_all[i].nghbr_cell.size())) ;
+		//face
+		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
+			for ( int n = 0 ; n < ndim ; n++ ) {
+				m->cell_all[i].lsq_face[n].push_back( Coeff(n, k+m->cell_all[i].nghbr_cell.size())) ;
+			}
 		}
 
 	}//end cell loop.
+
+	delete [] dDist;
 }

@@ -47,7 +47,6 @@ void CPoisson::Solve()
 	VecView( var->ElectricField[0], viewer);
 	VecView( var->ElectricField[1], viewer);
 
-	//VecView( var->Debug, viewer);
 	PetscViewerDestroy(&viewer);
 }
 void CPoisson::Bulid_A_B()

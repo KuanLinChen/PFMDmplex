@@ -28,7 +28,7 @@ template <typename T> class QSMatrix {
 
   QSMatrix<T>  transpose();
   QSMatrix<T>  adjoint();
-  QSMatrix<T> minor( unsigned, unsigned ) ;
+  QSMatrix<T> minor_1( unsigned, unsigned ) ;
 
 
   T det() ;

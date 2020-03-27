@@ -7,6 +7,6 @@ OBJ =  geometry_structure.o linear_solvers_structure.o solver_poisson.o variable
 
 main: main.o  ${OBJ}
 	-${CLINKER} -o main main.o ${OBJ} ${PETSC_LIB}
-	${RM} -f main.o 
+	${RM} -f *.o 
 
 

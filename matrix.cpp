@@ -27,8 +27,6 @@ QSMatrix<T>::QSMatrix(const QSMatrix<T>& rhs)
 /*--- (Virtual) Destructor ---*/
 template<typename T>
 QSMatrix<T>::~QSMatrix() {
-
-
 }
 
 /*--- Assignment Operator ---*/
@@ -175,7 +173,7 @@ QSMatrix<T> QSMatrix<T>::transpose()
 
 /* Get minor matrix for matrix calculation. */
 template<typename T>
-QSMatrix<T> QSMatrix<T>::minor( unsigned p, unsigned q ) 
+QSMatrix<T> QSMatrix<T>::minor_1( unsigned p, unsigned q ) 
 {
 	QSMatrix results( rows-1, cols-1, 0.0);
 
@@ -213,7 +211,7 @@ T QSMatrix<T>::det()
 	QSMatrix C(n-1, n-1, 0.0 ) ; 
 
 	for ( unsigned f = 0; f < n; f++ ) { 
-		C = minor( 0, f ) ; 
+		C = minor_1( 0, f ) ; 
 		results = results + this->mat[0][f]*pow(-1,f)*C.det() ; 
 	} 
 	return results ; 
@@ -235,10 +233,10 @@ QSMatrix<T> QSMatrix<T>::adjoint()
 	// temp is used to store cofactors of A[][] 
 	int sign = 1; 
 
-	for ( int i=0; i<rows; i++) { 
-		for ( int j=0; j<cols; j++) { 
+	for ( unsigned i=0; i<rows; i++) { 
+		for ( unsigned j=0; j<cols; j++) { 
 
-			C = minor( i, j ) ; 
+			C = minor_1( i, j ) ; 
 			sign = ((i+j)%2==0)? 1: -1; 
 
 			adj(j,i) = (sign)*(C.det()); 

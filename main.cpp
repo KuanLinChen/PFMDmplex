@@ -1,7 +1,7 @@
 //#include "common.hpp"
 #include "variable_structure.hpp"
 #include "geometry_structure.hpp"
-#include "solver_poisson.hpp"
+//#include "solver_poisson.hpp"
 #include "solver_sepcies.hpp"
 
 
@@ -49,20 +49,20 @@ int main(int argc, char **argv)
   CGeometry *mesh ;
   mesh = new CGeometry ;
   //mesh->ReadMeshFromFile( "./mesh/2d_Structured.msh") ;
-  mesh->Init("./mesh/2d_Structured.msh") ;
+ 	mesh->Init("./mesh/2d_Structured.msh") ;
+  //mesh->Init("../SYS-Setup-Output.cas") ;
 
-  
   CVariable *variable ;
   variable = new CVariable() ;
   variable->Init( mesh ) ;
   variable->allocate_variable_vectors();
-  //cout<<"AAA2"<<endl;
+
   
-	CPoisson *poisson ;
-	poisson = new CPoisson();
-	poisson->Init( mesh, variable ) ;
-	//cout<<"A"<<endl;
-	poisson->Solve() ;
+	// CPoisson *poisson ;
+	// poisson = new CPoisson();
+	// poisson->Init( mesh, variable ) ;
+	// cout<<"A"<<endl;
+	// poisson->Solve() ;
 	
   PetscEnd();
 

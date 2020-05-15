@@ -16,6 +16,29 @@
 #include <vector>
 #include <../src/sys/classes/viewer/impls/vtk/vtkvimpl.h>
 using namespace std;
+class CNode
+{
+	public: 
+	CNode()
+	{
+	};
+	int offsets ;
+	double *coords ; /*!< \brief  centroid. */
+
+	int adj_cell_list_size ;
+	vector<int> adj_cell_list ;
+
+	int adj_face_list_size ;
+	vector<int> adj_face_list ;
+
+
+	/* Allocate */
+	void init( int ndim )
+	{
+		coords = new double [ ndim ] ;
+	}
+};
+
 class CCell
 {
 	public: 
@@ -25,6 +48,7 @@ class CCell
 		centroid[0] = centroid[1] = centroid[2] =  0.0 ;
 		volume = 0.0 ;
 	};
+
 	vector<int> nghbr_cell ;
 	vector<int> nghbr_face ;
 	
@@ -32,11 +56,31 @@ class CCell
 	vector<double> lsq_face[3];
 
 
-	int  index,  /*!< \brief  local cell index. */
-	    gindex ; /*!< \brief global cell index. */
+	int  index ; /*!< \brief  local cell index. */
+	int gindex ; /*!< \brief global cell index. */
 
 	double centroid[3], auxiliary[3] ;
-	double volume ;
+
+	double *coords ; /*!< \brief  centroid. */
+	double  volume ; /*!< \brief  cell volume. */
+
+	/* Allocate */
+	void init( int ndim )
+	{
+		coords = new double [ ndim ] ;
+	}
+	/* Cell-Cell informations */
+		int adj_cell_list_size ;
+		vector<int> adj_cell_list ;
+
+	/* Cell-Face informations */
+		int adj_face_list_size ;
+		vector<int> adj_face_list ;
+
+	/*Cell-Node informations */
+		int adj_node_list_size ;
+		vector<int> adj_node_list ;
+
 	int nnghbrs_cell()
 	{
 		return nghbr_cell.size();
@@ -45,6 +89,7 @@ class CCell
 	{
 		return nghbr_face.size();
 	}
+
 };
 /*
 !          v2=Left(2)
@@ -71,13 +116,23 @@ class CFace
 			 centroid[1]=0.0;
 			 centroid[2]=0.0;
 		} ;
+	void init( int ndim )
+	{
+		coords = new double [ ndim ] ;
+		normal = new double [ ndim ] ;
 
+	}
 		int offsets ;
 
 		CCell *cgeom[2] ;
 
 		int nnghbrs_cell ; 		/*!< \brief number of neighbors */ 
 
+		int adj_cell_list_size ;
+		vector<int> adj_cell_list ;
+
+		int adj_node_list_size ;
+		vector<int> adj_node_list ;
 
 		double dL, dR ;/*!< \brief left and right cell centroid to face centroid index. */
 		//Vector 
@@ -96,6 +151,12 @@ class CFace
 		double face_nrml_mag ; //, dA, nA[3] ;
 		double face_nrml[3] ;
 		double  centroid[3] ;
+
+
+		/* New */
+		double area ;
+		double *coords ;
+		double *normal ;
 
 		// void calculate_normal_mag( PetscInt iface )
 		// {
@@ -160,8 +221,14 @@ class CGeometry
 					cEndInterior ; /*!< \brief 'cell'   end index on each processor excluding the processor boundary ghost cells. */
 
 		/* Cell & Face data */
-			CCell *cell_all ;
-			CFace *face_all ;
+			// CCell *cell_all ;
+			// CFace *face_all ;
+
+
+			CCell *cell ;
+			CFace *face ;
+			CNode *node ;
+
 
 			vector<CFace*> power_face_loop, ground_face_loop, neumann_face_loop, processors_face_loop, 
 			interior_face_loop ;//The face data contain only the interior faces, which are shared by two cells.
@@ -181,6 +248,12 @@ class CGeometry
 			/* Create the cell dm for cell vector alloc. */
 			void CreateCellDM() ;
 
+			void CreateCellConnectivity() ;
+			void CreateFaceConnectivity() ;
+			void CreateNodeConnectivity();
+
+			void ExtractCellFaceInformations() ;
+			void ExtractNodeInformations();
 
 			/* Mapping local_id to global_id. */
 			map<int, int> mapLocal2GlobalIds ;
@@ -200,22 +273,22 @@ class CGeometry
 			void CreateLocalToGlobalCellIdMapping() ;
 
 			void ComputeFaceCellInformations() ;
-			/* cell-cell adjacency */
-			PetscInt *offsets, *adjacency, nnghbrs, ncells ; 
-			/* number of cell neighbors */
-			inline PetscInt cell_cell_nnghbrs( PetscInt i ) {
-				return offsets[i+1]-offsets[ i ] ;
-			}
-			inline PetscInt cell_face_nnghbrs( PetscInt i ) {
-				PetscInt cell_nnghbrs_face ;
-				DMPlexGetConeSize(dmMesh, i, &cell_nnghbrs_face) ;
-				return cell_nnghbrs_face ;
-			}
+			// /* cell-cell adjacency */
+			// PetscInt *offsets, *adjacency, nnghbrs, ncells ; 
+			// /* number of cell neighbors */
+			// inline PetscInt cell_cell_nnghbrs( PetscInt i ) {
+			// 	return offsets[i+1]-offsets[ i ] ;
+			// }
+			// inline PetscInt cell_face_nnghbrs( PetscInt i ) {
+			// 	PetscInt cell_nnghbrs_face ;
+			// 	DMPlexGetConeSize(dmMesh, i, &cell_nnghbrs_face) ;
+			// 	return cell_nnghbrs_face ;
+			// }
 
-			/* list of cell neighbors */
-			inline PetscInt cell_nghbr( PetscInt i, PetscInt j ) {
-				return adjacency[ j+offsets[i] ] ;
-			}
+			// /* list of cell neighbors */
+			// inline PetscInt cell_nghbr( PetscInt i, PetscInt j ) {
+			// 	return adjacency[ j+offsets[i] ] ;
+			// }
 
 		/* To get the global cell index */
 			PetscSection global_ids_section ;

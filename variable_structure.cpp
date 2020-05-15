@@ -32,64 +32,64 @@ void CVariable::allocate_variable_vectors()
 }
 void CVariable::compute_LSQ_coefficient()
 {
-	PetscInt ndim = m->GetDimension();
+	// PetscInt ndim = m->GetDimension();
 
-	double *dDist = NULL;
-	dDist = new double[ndim] ;
+	// double *dDist = NULL;
+	// dDist = new double[ndim] ;
 
-	int  ids=0, nnghbrs=0 ;
+	// int  ids=0, nnghbrs=0 ;
 
-	QSMatrix<double> A( ndim, ndim, 0.0 ), A_inv( ndim, ndim, 0.0 ), adj( ndim, ndim, 0.0 ) ;
+	// QSMatrix<double> A( ndim, ndim, 0.0 ), A_inv( ndim, ndim, 0.0 ), adj( ndim, ndim, 0.0 ) ;
 
 
-	for ( int i = m->cStart ; i < m->cEnd ; i++ ) {
+	// for ( int i = m->cStart ; i < m->cEnd ; i++ ) {
 
-		nnghbrs = m->cell_all[i].nghbr_cell.size() + m->cell_all[i].nghbr_face.size() ;
+	// 	nnghbrs = m->cell_all[i].nghbr_cell.size() + m->cell_all[i].nghbr_face.size() ;
+	// 	cout<<"nnghbrs: "<<nnghbrs<<endl;
+	// 	QSMatrix<double> D( nnghbrs, ndim, 0.0 ), Coeff( nnghbrs, ndim, 0.0 ) ;
 
-		QSMatrix<double> D( nnghbrs, ndim, 0.0 ), Coeff( nnghbrs, ndim, 0.0 ) ;
+	// 	//cell
+	// 	for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
 
-		//cell
-		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
+	// 		ids = m->cell_all[i].nghbr_cell[k] ;
 
-			ids = m->cell_all[i].nghbr_cell[k] ;
+	// 		for ( int n=0 ; n < ndim ; n++ ){
+	// 			dDist[n] = m->cell[ids].coords[n]  - m->cell_all[i].centroid[n] ;
+	// 			D( k, n ) = dDist[n] ; 
+	// 		}
+	// 	}
+	// 	//face
+	// 	for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_face.size() ; k++ ) {
 
-			for ( int n=0 ; n < ndim ; n++ ){
-				dDist[n] = m->cell_all[ids].centroid[n]  - m->cell_all[i].centroid[n] ;
-				D( k, n ) = dDist[n] ; 
-			}
-		}
-		//face
-		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_face.size() ; k++ ) {
+	// 		ids = m->cell_all[i].nghbr_face[k] - m->fStart ;
 
-			ids = m->cell_all[i].nghbr_face[k] - m->fStart ;
+	// 		for ( int n = 0 ; n < ndim ; n++ ) {
+	// 			dDist[n] = m->face_all[ids].centroid[n]  - m->cell_all[i].centroid[n] ;
+	// 			D( m->cell_all[i].nghbr_cell.size()+k, n ) = dDist[n] ; 
+	// 		}
+	// 	}
 
-			for ( int n = 0 ; n < ndim ; n++ ) {
-				dDist[n] = m->face_all[ids].centroid[n]  - m->cell_all[i].centroid[n] ;
-				D( m->cell_all[i].nghbr_cell.size()+k, n ) = dDist[n] ; 
-			}
-		}
+	// 	//calculate the lsq-coefficient.
+	// 	QSMatrix<double> DTran = D.transpose();
+	// 	A = DTran*D ;
+	// 	adj = A.adjoint();
+	// 	A_inv = adj/A.det();
+	// 	Coeff = A_inv*DTran ;
 
-		//calculate the lsq-coefficient.
-		QSMatrix<double> DTran = D.transpose();
-		A = DTran*D ;
-		adj = A.adjoint();
-		A_inv = adj/A.det();
-		Coeff = A_inv*DTran ;
+	// 	//cell
+	// 	for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
+	// 		for ( int n = 0 ; n < ndim ; n++ ) {
+	// 			m->cell_all[i].lsq_cell[n].push_back( Coeff(n,k) ) ;
+	// 		}
+	// 	}
+	// 	//face
+	// 	for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
+	// 		for ( int n = 0 ; n < ndim ; n++ ) {
+	// 			m->cell_all[i].lsq_face[n].push_back( Coeff(n, k+m->cell_all[i].nghbr_cell.size())) ;
+	// 		}
+	// 	}
 
-		//cell
-		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
-			for ( int n = 0 ; n < ndim ; n++ ) {
-				m->cell_all[i].lsq_cell[n].push_back( Coeff(n,k) ) ;
-			}
-		}
-		//face
-		for ( unsigned int k = 0 ; k < m->cell_all[i].nghbr_cell.size() ; k++ ) {
-			for ( int n = 0 ; n < ndim ; n++ ) {
-				m->cell_all[i].lsq_face[n].push_back( Coeff(n, k+m->cell_all[i].nghbr_cell.size())) ;
-			}
-		}
+	// }//end cell loop.
 
-	}//end cell loop.
-
-	delete [] dDist;
+	// delete [] dDist;
 }
